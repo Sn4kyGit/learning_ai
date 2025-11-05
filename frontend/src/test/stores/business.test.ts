@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useBusinessStore } from '@/stores/business'
 import { businessService } from '@/services/business'
+import type { Business } from '@/types'
 
 // Mock the business service
 vi.mock('@/services/business', () => ({
@@ -19,7 +20,7 @@ describe('Business Store', () => {
     vi.clearAllMocks()
   })
 
-  const mockBusinesses = [
+  const mockBusinesses: Business[] = [
     {
       id: 'business-1',
       name: 'Restaurant A',
@@ -64,8 +65,8 @@ describe('Business Store', () => {
       const store = useBusinessStore()
       await store.fetchBusinesses()
       
-      expect(store.businesses).toEqual(mockBusinesses)
-      expect(store.currentBusiness).toEqual(mockBusinesses[0])
+      expect((store as any).businesses).toEqual(mockBusinesses)
+      expect((store as any).currentBusiness).toEqual(mockBusinesses[0])
       expect(store.loading).toBe(false)
       expect(store.error).toBeNull()
       expect(store.hasBusinesses).toBe(true)
@@ -107,7 +108,7 @@ describe('Business Store', () => {
       vi.mocked(businessService.getBusinesses).mockResolvedValue(mockBusinesses)
       
       const store = useBusinessStore()
-      store.currentBusiness = mockBusinesses[1]
+      ;(store as any).currentBusiness = mockBusinesses[1]
       
       await store.fetchBusinesses()
       
@@ -143,7 +144,7 @@ describe('Business Store', () => {
       
       expect(businessService.createBusiness).toHaveBeenCalledWith(businessData)
       // Check that business was added to the store
-      expect(store.businesses.find(b => b.id === newBusiness.id)).toEqual(newBusiness)
+      expect((store as any).businesses.find((b: any) => b.id === newBusiness.id)).toEqual(newBusiness)
       expect(result).toEqual(newBusiness)
     })
 
@@ -174,14 +175,14 @@ describe('Business Store', () => {
       vi.mocked(businessService.updateBusiness).mockResolvedValue(updatedBusiness)
       
       const store = useBusinessStore()
-      store.businesses = [...mockBusinesses]
-      store.currentBusiness = mockBusinesses[0]
+      ;(store as any).businesses = [...mockBusinesses]
+      ;(store as any).currentBusiness = mockBusinesses[0]
       
       const updates = { name: 'Updated Restaurant A' }
       const result = await store.updateBusiness('business-1', updates)
       
       expect(businessService.updateBusiness).toHaveBeenCalledWith('business-1', updates)
-      expect(store.businesses[0]).toEqual(updatedBusiness)
+      expect((store as any).businesses[0]).toEqual(updatedBusiness)
       expect(store.currentBusiness).toEqual(updatedBusiness)
       expect(result).toEqual(updatedBusiness)
     })
@@ -191,8 +192,8 @@ describe('Business Store', () => {
       vi.mocked(businessService.updateBusiness).mockResolvedValue(updatedBusiness)
       
       const store = useBusinessStore()
-      store.businesses = [...mockBusinesses]
-      store.currentBusiness = mockBusinesses[0]
+      ;(store as any).businesses = [...mockBusinesses]
+      ;(store as any).currentBusiness = mockBusinesses[0]
       
       await store.updateBusiness('business-1', { name: 'Updated Restaurant A' })
       
@@ -215,14 +216,14 @@ describe('Business Store', () => {
       vi.mocked(businessService.deleteBusiness).mockResolvedValue(undefined)
       
       const store = useBusinessStore()
-      store.businesses = [...mockBusinesses]
-      store.currentBusiness = mockBusinesses[0]
+      ;(store as any).businesses = [...mockBusinesses]
+      ;(store as any).currentBusiness = mockBusinesses[0]
       
       await store.deleteBusiness('business-1')
       
       expect(businessService.deleteBusiness).toHaveBeenCalledWith('business-1')
-      expect(store.businesses).toHaveLength(1)
-      expect(store.businesses[0]).toEqual(mockBusinesses[1])
+      expect((store as any).businesses).toHaveLength(1)
+      expect((store as any).businesses[0]).toEqual(mockBusinesses[1])
       expect(store.currentBusiness).toEqual(mockBusinesses[1])
     })
 
@@ -230,12 +231,12 @@ describe('Business Store', () => {
       vi.mocked(businessService.deleteBusiness).mockResolvedValue(undefined)
       
       const store = useBusinessStore()
-      store.businesses = [mockBusinesses[0]]
-      store.currentBusiness = mockBusinesses[0]
+      ;(store as any).businesses = [mockBusinesses[0]]
+      ;(store as any).currentBusiness = mockBusinesses[0]
       
       await store.deleteBusiness('business-1')
       
-      expect(store.businesses).toHaveLength(0)
+      expect((store as any).businesses).toHaveLength(0)
       expect(store.currentBusiness).toBeNull()
     })
 
@@ -262,7 +263,7 @@ describe('Business Store', () => {
   describe('clearError', () => {
     it('clears error state', () => {
       const store = useBusinessStore()
-      store.error = 'Some error'
+      ;(store as any).error = 'Some error'
       
       store.clearError()
       
@@ -276,7 +277,7 @@ describe('Business Store', () => {
       
       expect(store.hasBusinesses).toBe(false)
       
-      store.businesses = mockBusinesses
+      ;(store as any).businesses = mockBusinesses
       expect(store.hasBusinesses).toBe(true)
     })
 
@@ -285,7 +286,7 @@ describe('Business Store', () => {
       
       expect(store.businessCount).toBe(0)
       
-      store.businesses = mockBusinesses
+      ;(store as any).businesses = mockBusinesses
       expect(store.businessCount).toBe(2)
     })
   })
