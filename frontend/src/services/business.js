@@ -26,8 +26,8 @@ export const businessService = {
     return response.data
   },
 
-  async importReviews(businessId) {
-    const response = await apiClient.post(`/businesses/${businessId}/import-reviews`)
+  async importReviews(businessId, options = {}) {
+    const response = await apiClient.post(`/businesses/${businessId}/import-reviews`, options)
     return response.data
   },
 
@@ -36,10 +36,9 @@ export const businessService = {
     return response.data
   },
 
-  async searchPlaces(query) {
-    const response = await apiClient.get('/businesses/search-places', {
-      params: { query }
-    })
+  async getConsolidatedStats(businessIds = []) {
+    const params = businessIds.length > 0 ? { business_ids: businessIds.join(',') } : {}
+    const response = await apiClient.get('/businesses/consolidated-stats', { params })
     return response.data
   }
 }

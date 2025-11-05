@@ -53,5 +53,44 @@ export const reviewService = {
       response: responseText
     })
     return response.data
+  },
+
+  async getResponseSuggestions(reviewId) {
+    const response = await apiClient.get(`/reviews/${reviewId}/response-suggestions`)
+    return response.data
+  },
+
+  async searchReviews(businessId, query, filters = {}) {
+    const response = await apiClient.get(`/reviews/${businessId}/search`, {
+      params: { query, ...filters }
+    })
+    return response.data
+  },
+
+  async getReviewFilters(businessId) {
+    const response = await apiClient.get(`/reviews/${businessId}/filters`)
+    return response.data
+  },
+
+  async getUnclassifiedReviews(businessId, limit = 100) {
+    const response = await apiClient.get(`/reviews/unclassified/${businessId}`, {
+      params: { limit }
+    })
+    return response.data
+  },
+
+  async processReviews(businessId) {
+    const response = await apiClient.post(`/reviews/process/${businessId}`)
+    return response.data
+  },
+
+  async processSingleReview(reviewId) {
+    const response = await apiClient.post(`/reviews/process/single/${reviewId}`)
+    return response.data
+  },
+
+  async getReviewStatistics(businessId) {
+    const response = await apiClient.get(`/reviews/statistics/${businessId}`)
+    return response.data
   }
 }

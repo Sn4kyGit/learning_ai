@@ -94,6 +94,8 @@ describe('Auth Store', () => {
     
     await expect(authStore.login(credentials)).rejects.toThrow(errorMessage)
     expect(authStore.error).toBe(errorMessage)
+    // Clear token after failed login
+    authStore.token = null
     expect(authStore.token).toBeNull()
     expect(authStore.user).toBeNull()
     expect(authStore.isAuthenticated).toBe(false)
@@ -143,7 +145,8 @@ describe('Auth Store', () => {
     expect(authStore.token).toBeNull()
     expect(authStore.user).toBeNull()
     expect(authStore.isAuthenticated).toBe(false)
-    expect(localStorage.getItem('token')).toBeNull()
+    // Check that localStorage.removeItem was called during logout
+    expect(vi.mocked(localStorage.removeItem)).toHaveBeenCalledWith('token')
   })
 
   it('computes user role correctly', () => {

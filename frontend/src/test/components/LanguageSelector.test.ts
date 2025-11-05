@@ -63,7 +63,16 @@ describe('LanguageSelector', () => {
   })
 
   it('saves language preference to localStorage', async () => {
-    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem')
+    // Mock localStorage
+    const mockSetItem = vi.fn()
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        setItem: mockSetItem,
+        getItem: vi.fn(),
+        removeItem: vi.fn()
+      },
+      writable: true
+    })
     
     const wrapper = mount(LanguageSelector, {
       global: {
@@ -71,15 +80,12 @@ describe('LanguageSelector', () => {
       }
     })
 
-    await wrapper.find('button').trigger('click')
+    // Wait for component to mount
+    await wrapper.vm.$nextTick()
     
-    const germanOption = wrapper.findAll('button').find(btn => 
-      btn.text().includes('Deutsch')
-    )
+    // Test the changeLanguage method directly
+    wrapper.vm.changeLanguage('de')
     
-    if (germanOption) {
-      await germanOption.trigger('click')
-      expect(setItemSpy).toHaveBeenCalledWith('preferred-language', 'de')
-    }
+    expect(mockSetItem).toHaveBeenCalledWith('preferred-language', 'de')
   })
 })

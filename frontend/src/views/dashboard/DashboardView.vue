@@ -1,5 +1,15 @@
 <template>
   <div class="space-y-6">
+    <!-- Business Selector for Super-Admins -->
+    <BusinessSelector
+      :businesses="businesses"
+      :selected-business-id="selectedBusinessId"
+      :view-mode="viewMode"
+      :user-role="user?.role"
+      @business-change="onBusinessChange"
+      @view-mode-change="onViewModeChange"
+    />
+
     <!-- Welcome Section -->
     <div class="bg-white shadow rounded-lg p-6">
       <div class="flex items-center justify-between">
@@ -8,7 +18,7 @@
             {{ $t('dashboard.welcome') }}, {{ user?.name }}!
           </h1>
           <p class="mt-1 text-sm text-gray-600">
-            {{ $t('dashboard.overview') }}
+            {{ getWelcomeMessage() }}
           </p>
         </div>
         <div class="flex space-x-3">
@@ -20,6 +30,13 @@
             <ArrowDownTrayIcon class="h-4 w-4 mr-2" />
             {{ importing ? $t('common.loading') : $t('dashboard.importReviews') }}
           </button>
+          <router-link
+            to="/app/analytics"
+            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <ChartBarIcon class="h-4 w-4 mr-2" />
+            {{ $t('dashboard.analytics') }}
+          </router-link>
         </div>
       </div>
     </div>
@@ -245,19 +262,27 @@ import {
   DocumentTextIcon
 } from '@heroicons/vue/24/outline'
 import { useAuthStore } from '@/stores/auth'
+import { useBusinessStore } from '@/stores/business'
 import { useNotificationsStore } from '@/stores/notifications'
 import { formatDistanceToNow } from 'date-fns'
+import BusinessSelector from '@/components/dashboard/BusinessSelector.vue'
 import type { Review, DashboardMetrics } from '@/types'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
+const businessStore = useBusinessStore()
 const notificationsStore = useNotificationsStore()
 
 const user = computed(() => authStore.user)
+const businesses = computed(() => businessStore.businesses)
 const importing = ref(false)
 const generatingReport = ref(false)
 const recentReviews = ref<Review[]>([])
 const stats = ref<Partial<DashboardMetrics>>({})
+
+// Multi-restaurant support
+const selectedBusinessId = ref<string>('current')
+const viewMode = ref<'individual' | 'consolidated'>('individual')
 
 const getSentimentBorderColor = (sentiment?: string) => {
   switch (sentiment) {
@@ -316,14 +341,42 @@ const generateReport = async () => {
   }
 }
 
+const getWelcomeMessage = () => {
+  if (selectedBusinessId.value === 'all') {
+    return t('dashboard.consolidatedViewDescription')
+  }
+  return t('dashboard.overview')
+}
+
+const onBusinessChange = (businessId: string) => {
+  selectedBusinessId.value = businessId
+  loadDashboardData()
+}
+
+const onViewModeChange = (mode: 'individual' | 'consolidated') => {
+  viewMode.value = mode
+  loadDashboardData()
+}
+
 const loadDashboardData = async () => {
   try {
-    // Simulate loading dashboard data
-    stats.value = {
-      averageRating: 4.2,
-      totalReviews: 156,
-      positivePercentage: 78,
-      criticalReviews: 3
+    // Simulate loading dashboard data based on selected business
+    if (selectedBusinessId.value === 'all') {
+      // Consolidated view - aggregate data from all businesses
+      stats.value = {
+        averageRating: 4.1,
+        totalReviews: 423,
+        positivePercentage: 75,
+        criticalReviews: 8
+      }
+    } else {
+      // Individual business view
+      stats.value = {
+        averageRating: 4.2,
+        totalReviews: 156,
+        positivePercentage: 78,
+        criticalReviews: 3
+      }
     }
 
     // Simulate recent reviews
@@ -380,7 +433,13 @@ const loadDashboardData = async () => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await businessStore.fetchBusinesses()
+  
+  if (businesses.value.length > 0) {
+    selectedBusinessId.value = businessStore.currentBusiness?.id || businesses.value[0].id
+  }
+  
   loadDashboardData()
 })
 </script>

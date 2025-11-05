@@ -101,17 +101,51 @@ export interface SentimentDistribution {
 
 // Chat Types
 export interface ChatMessage {
-  id: string
+  message_id: string
   role: 'user' | 'assistant'
   content: string
-  timestamp: string
-  business_id?: string
+  created_at: string
+  language: string
+  cost_info?: {
+    tokens: number
+    cost: number
+  }
+}
+
+export interface Conversation {
+  conversation_id: string
+  business_id: string
+  message_count: number
+  last_message_at: string
+  created_at: string
+}
+
+export interface ConversationMessages {
+  conversation_id: string
+  business_id: string
+  messages: ChatMessage[]
 }
 
 export interface ChatResponse {
-  message: string
-  suggestions?: string[]
-  data?: any
+  response: string
+  conversation_id: string
+  message_id: string
+  language: string
+  cost_info?: {
+    tokens: number
+    cost: number
+  }
+}
+
+export interface ChatUsageStats {
+  total_conversations: number
+  total_messages: number
+  avg_messages_per_conversation: number
+  total_cost: number
+}
+
+export interface BusinessContextSummary {
+  context_summary: any
 }
 
 // Notification Types
