@@ -8,7 +8,7 @@ cache management, and dashboard data generation.
 import pytest
 from decimal import Decimal
 from uuid import uuid4
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
 from backend.services.analytics_service import AnalyticsService
 from backend.db.repositories.review import ReviewRepository
@@ -105,7 +105,7 @@ class TestAnalyticsIntegration:
                 rating=review_data["rating"],
                 text=review_data["text"],
                 language="en",
-                published_at=datetime.utcnow() - timedelta(days=i),
+                published_at=datetime.now(timezone.utc) - timedelta(days=i),
                 source="google",
                 external_id=f"integration-review-{i}",
             )
@@ -142,6 +142,7 @@ class TestAnalyticsIntegration:
         }
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_dashboard_data_calculation_integration(
         self, business_with_reviews, analytics_service
     ):
@@ -172,9 +173,10 @@ class TestAnalyticsIntegration:
 
         # Verify data freshness
         assert dashboard_data.last_updated is not None
-        time_diff = datetime.utcnow() - dashboard_data.last_updated
+        time_diff = datetime.now(timezone.utc) - dashboard_data.last_updated
         assert time_diff.total_seconds() < 60  # Should be very recent
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_trend_analysis_integration(
         self, business_with_reviews, analytics_service
@@ -196,6 +198,7 @@ class TestAnalyticsIntegration:
         assert trend_analysis.review_volume_trend in ["increasing", "decreasing", "stable"]
         assert len(trend_analysis.key_insights) > 0
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_business_score_calculation_integration(
         self, business_with_reviews, analytics_service
@@ -221,6 +224,7 @@ class TestAnalyticsIntegration:
         assert len(business_score["recommendations"]) > 0
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_cache_behavior_integration(
         self, business_with_reviews, analytics_service
     ):
@@ -229,14 +233,14 @@ class TestAnalyticsIntegration:
         business = business_with_reviews["business"]
 
         # Act - First call should calculate and cache
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         dashboard_data_1 = await analytics_service.get_dashboard_data(business.id)
-        first_call_time = (datetime.utcnow() - start_time).total_seconds()
+        first_call_time = (datetime.now(timezone.utc) - start_time).total_seconds()
 
         # Act - Second call should use cache (should be faster)
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         dashboard_data_2 = await analytics_service.get_dashboard_data(business.id)
-        second_call_time = (datetime.utcnow() - start_time).total_seconds()
+        second_call_time = (datetime.now(timezone.utc) - start_time).total_seconds()
 
         # Assert
         assert dashboard_data_1.business_id == dashboard_data_2.business_id
@@ -251,6 +255,7 @@ class TestAnalyticsIntegration:
         assert cache_stats["total_entries"] >= 1
         assert cache_stats["active_entries"] >= 1
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_cache_invalidation_integration(
         self, business_with_reviews, analytics_service, test_db_session
@@ -270,7 +275,7 @@ class TestAnalyticsIntegration:
             rating=5,
             text="Great new experience!",
             language="en",
-            published_at=datetime.utcnow(),
+            published_at=datetime.now(timezone.utc),
             source="google",
             external_id="new-integration-review",
         )
@@ -287,6 +292,7 @@ class TestAnalyticsIntegration:
         assert dashboard_data_2.total_reviews == 7  # Should include new review
         assert dashboard_data_2.avg_rating != dashboard_data_1.avg_rating  # Should be recalculated
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_multi_business_dashboard_integration(
         self, test_db_session, test_organization, analytics_service
@@ -321,7 +327,7 @@ class TestAnalyticsIntegration:
                 rating=4,
                 text="Good experience",
                 language="en",
-                published_at=datetime.utcnow(),
+                published_at=datetime.now(timezone.utc),
                 source="google",
                 external_id=f"multi-review-{business.id}",
             )
@@ -340,6 +346,7 @@ class TestAnalyticsIntegration:
             dashboard_data = multi_dashboard[str(business_id)]
             assert dashboard_data.total_reviews >= 1  # At least our test review
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_consolidated_metrics_integration(
         self, test_db_session, test_organization, analytics_service
@@ -380,6 +387,7 @@ class TestAnalyticsIntegration:
         assert "top_topics" in consolidated_metrics
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_scheduled_cache_refresh_integration(
         self, business_with_reviews, analytics_service, repositories
     ):
@@ -399,6 +407,7 @@ class TestAnalyticsIntegration:
         assert final_cache_stats["active_entries"] >= initial_cache_stats["active_entries"]
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_analytics_with_no_data_integration(
         self, test_business, analytics_service
     ):
@@ -417,6 +426,7 @@ class TestAnalyticsIntegration:
         trend_analysis = await analytics_service.get_trend_analysis(test_business.id)
         assert "Insufficient data" in trend_analysis.key_insights[0]
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_concurrent_analytics_requests_integration(
         self, business_with_reviews, analytics_service
@@ -447,6 +457,7 @@ class TestAnalyticsIntegration:
         assert cache_stats["active_entries"] >= 3
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_analytics_update_integration(
         self, business_with_reviews, analytics_service, repositories
     ):
@@ -474,6 +485,7 @@ class TestAnalyticsIntegration:
         expected_avg = 20.0 / 6
         assert abs(float(updated_business.avg_rating) - expected_avg) < 0.01
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_cache_expiration_integration(
         self, business_with_reviews, analytics_service
@@ -508,6 +520,7 @@ class TestAnalyticsIntegration:
         # But timestamps should be different (indicating recalculation)
         assert dashboard_data_2.last_updated > dashboard_data_1.last_updated
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_error_handling_integration(
         self, business_with_reviews, test_db_session

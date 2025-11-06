@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="coverage" tests="3" failures="2" time="0.0">
+    <testcase name="overall_coverage" classname="coverage" time="0.0">
+                    <failure message="Coverage threshold not met">Overall coverage 0.0% below threshold 80%</failure>
+                </testcase>
+<testcase name="critical_path_coverage" classname="coverage" time="0.0">
+                    <failure message="Critical path coverage threshold not met">Critical path coverage 0.0% below threshold 100%</failure>
+                </testcase>
+<testcase name="coverage_regression" classname="coverage" time="0.0"/>
+</testsuite>

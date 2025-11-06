@@ -1,0 +1,61 @@
+{
+  "summary": {
+    "total_duration": 2.0364129543304443,
+    "total_suites": 5,
+    "passed_suites": 0,
+    "failed_suites": 5,
+    "total_tests": 0,
+    "passed_tests": 0,
+    "failed_tests": 0,
+    "skipped_tests": 0,
+    "success_rate": 0
+  },
+  "suites": {
+    "unit": {
+      "suite": "unit",
+      "success": false,
+      "duration": 0.6327230930328369,
+      "stdout": "",
+      "stderr": "ERROR: usage: __main__.py [options] [file_or_dir] [file_or_dir] [...]\n__main__.py: error: unrecognized arguments: --timeout 300 --json-report --json-report-file=test-results-unit.json\n  inifile: /Users/ronnystosser/learning_ai/pytest.ini\n  rootdir: /Users/ronnystosser/learning_ai\n\n",
+      "return_code": 4
+    },
+    "integration": {
+      "suite": "integration",
+      "success": false,
+      "duration": 0.3622739315032959,
+      "stdout": "",
+      "stderr": "ERROR: usage: __main__.py [options] [file_or_dir] [file_or_dir] [...]\n__main__.py: error: unrecognized arguments: --timeout 600 --json-report --json-report-file=test-results-integration.json\n  inifile: /Users/ronnystosser/learning_ai/pytest.ini\n  rootdir: /Users/ronnystosser/learning_ai\n\n",
+      "return_code": 4
+    },
+    "e2e": {
+      "suite": "e2e",
+      "success": false,
+      "duration": 0.28627705574035645,
+      "stdout": "",
+      "stderr": "ERROR: usage: __main__.py [options] [file_or_dir] [file_or_dir] [...]\n__main__.py: error: unrecognized arguments: --timeout 900 --json-report --json-report-file=test-results-e2e.json\n  inifile: /Users/ronnystosser/learning_ai/pytest.ini\n  rootdir: /Users/ronnystosser/learning_ai\n\n",
+      "return_code": 4
+    },
+    "deployment": {
+      "suite": "deployment",
+      "success": false,
+      "duration": 0.27599620819091797,
+      "stdout": "",
+      "stderr": "ERROR: usage: __main__.py [options] [file_or_dir] [file_or_dir] [...]\n__main__.py: error: unrecognized arguments: --timeout 300 --json-report --json-report-file=test-results-deployment.json\n  inifile: /Users/ronnystosser/learning_ai/pytest.ini\n  rootdir: /Users/ronnystosser/learning_ai\n\n",
+      "return_code": 4
+    },
+    "frontend_unit": {
+      "suite": "frontend_unit",
+      "success": false,
+      "duration": 0.08931994438171387,
+      "stdout": "",
+      "stderr": "npm error Missing script: \"test:unit\"\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error A complete log of this run can be found in: /Users/ronnystosser/.npm/_logs/2025-11-06T12_21_21_491Z-debug-0.log\n",
+      "return_code": 1
+    }
+  },
+  "timestamp": "2025-11-06 13:21:21",
+  "environment": {
+    "python_version": "3.13.3 (v3.13.3:6280bb54784, Apr  8 2025, 10:47:54) [Clang 15.0.0 (clang-1500.3.9.4)]",
+    "platform": "darwin",
+    "coverage_enabled": true
+  }
+}

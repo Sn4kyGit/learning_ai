@@ -7,7 +7,7 @@ multi-channel notifications, and crisis management mode.
 
 import pytest
 from uuid import uuid4
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from unittest.mock import AsyncMock, Mock
 
 from backend.services.notification.alert_service import (
@@ -24,6 +24,7 @@ from backend.db.repositories.classification import ClassificationRepository
 class TestAlertNotificationIntegration:
     """Integration tests for alert and notification system."""
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_complete_critical_review_alert_workflow(
         self, test_db_session, test_business, test_user
@@ -51,9 +52,9 @@ class TestAlertNotificationIntegration:
             rating=1,
             text="Terrible service, dirty restaurant, rude staff. Never coming back!",
             language="en",
-            published_at=datetime.utcnow(),
+            published_at=datetime.now(timezone.utc),
             source="google",
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
         
         # Create critical classification
@@ -87,6 +88,7 @@ class TestAlertNotificationIntegration:
         alert_service._check_crisis_mode.assert_called_once_with(review.business_id)
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_competitor_mention_super_admin_notification(
         self, test_db_session, test_business
     ):
@@ -105,9 +107,9 @@ class TestAlertNotificationIntegration:
             rating=2,
             text="This place is okay but McDonald's has better service and cleaner tables.",
             language="en",
-            published_at=datetime.utcnow(),
+            published_at=datetime.now(timezone.utc),
             source="google",
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
         
         classification = ClassificationResult(
@@ -143,6 +145,7 @@ class TestAlertNotificationIntegration:
         call_args = alert_service._schedule_delayed_notification.call_args
         assert call_args[1]["delay_minutes"] == 15
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_rating_drop_alert_with_database_integration(
         self, test_db_session, test_business, test_user
@@ -185,6 +188,7 @@ class TestAlertNotificationIntegration:
         alert_service._get_business_recipients.assert_called_once_with(test_business.id)
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_multi_channel_notification_delivery(
         self, test_db_session, test_business, test_user
     ):
@@ -202,7 +206,7 @@ class TestAlertNotificationIntegration:
                     "recipient": recipient,
                     "subject": subject,
                     "body": body,
-                    "timestamp": datetime.utcnow()
+                    "timestamp": datetime.now(timezone.utc)
                 })
         
         class MockSMSService:
@@ -213,7 +217,7 @@ class TestAlertNotificationIntegration:
                 self.sent_sms.append({
                     "phone": phone,
                     "message": message,
-                    "timestamp": datetime.utcnow()
+                    "timestamp": datetime.now(timezone.utc)
                 })
         
         class MockPushService:
@@ -225,7 +229,7 @@ class TestAlertNotificationIntegration:
                     "user_id": user_id,
                     "title": title,
                     "message": message,
-                    "timestamp": datetime.utcnow()
+                    "timestamp": datetime.now(timezone.utc)
                 })
         
         email_service = MockEmailService()
@@ -266,9 +270,9 @@ class TestAlertNotificationIntegration:
             rating=1,
             text="Worst experience ever! Dirty tables, cold food, rude staff.",
             language="en",
-            published_at=datetime.utcnow(),
+            published_at=datetime.now(timezone.utc),
             source="google",
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
         
         classification = ClassificationResult(
@@ -302,6 +306,7 @@ class TestAlertNotificationIntegration:
         assert "Critical review" in sms_service.sent_sms[0]["message"]
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_crisis_management_mode_detection(
         self, test_db_session, test_business
     ):
@@ -321,9 +326,9 @@ class TestAlertNotificationIntegration:
                 rating=1,
                 text=f"Terrible experience {i+1}. Never coming back!",
                 language="en",
-                published_at=datetime.utcnow() - timedelta(hours=i*2),
+                published_at=datetime.now(timezone.utc) - timedelta(hours=i*2),
                 source="google",
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
             )
             critical_reviews.append(review)
         
@@ -347,6 +352,7 @@ class TestAlertNotificationIntegration:
         # Assert - Crisis mode check should be called for each review
         assert alert_service._check_crisis_mode.call_count == 4
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_alert_threshold_configuration_integration(
         self, test_db_session, test_business
@@ -384,6 +390,7 @@ class TestAlertNotificationIntegration:
                 alert_service._get_business_recipients.assert_not_called()
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_notification_error_recovery(
         self, test_db_session, test_business, test_user
     ):
@@ -418,9 +425,9 @@ class TestAlertNotificationIntegration:
             rating=1,
             text="Test critical review",
             language="en",
-            published_at=datetime.utcnow(),
+            published_at=datetime.now(timezone.utc),
             source="google",
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
         
         classification = ClassificationResult(
@@ -444,6 +451,7 @@ class TestAlertNotificationIntegration:
         working_sms.send_sms.assert_called_once()    # SMS still worked
         working_push.send_push.assert_called_once()   # Push still worked
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_language_specific_notifications(
         self, test_db_session, test_business
@@ -482,9 +490,9 @@ class TestAlertNotificationIntegration:
             rating=1,
             text="Critical review text",
             language="en",
-            published_at=datetime.utcnow(),
+            published_at=datetime.now(timezone.utc),
             source="google",
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
         
         classification = ClassificationResult(

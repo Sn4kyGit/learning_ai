@@ -306,6 +306,8 @@ class MockCostTracker(CostTracker):
 class TestProtocolImplementations:
     """Test suite for protocol implementations."""
 
+    @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_review_classifier_protocol_compliance(self):
         """Test that mock classifier implements the protocol correctly."""
         # Arrange
@@ -320,6 +322,8 @@ class TestProtocolImplementations:
         assert result.sentiment == "positive"
         assert result.ai_model == "mock-classifier"
 
+    @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_review_classifier_batch_processing(self):
         """Test batch processing in classifier protocol."""
         # Arrange
@@ -336,6 +340,8 @@ class TestProtocolImplementations:
         assert len(results) == 2
         assert all(isinstance(r, ClassificationResult) for r in results)
 
+    @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_business_advisor_protocol_compliance(self):
         """Test that mock advisor implements the protocol correctly."""
         # Arrange
@@ -358,6 +364,8 @@ class TestProtocolImplementations:
         assert "Mock response to:" in response.message
         assert response.language == "en"
 
+    @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_business_advisor_report_generation(self):
         """Test report generation in advisor protocol."""
         # Arrange
@@ -381,6 +389,8 @@ class TestProtocolImplementations:
         assert report.top_themes == ["food_quality", "service"]
         assert report.competitor_mentions == 1
 
+    @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_cost_tracker_protocol_compliance(self):
         """Test that mock cost tracker implements the protocol correctly."""
         # Arrange

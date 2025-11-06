@@ -76,11 +76,18 @@ class MockGooglePlacesClient:
         """Mock import reviews."""
         self.import_calls.append((google_place_id, business_id))
         
-        return {
-            "imported_count": 3,
-            "skipped_count": 2,
-            "total_available": 5,
-        }
+        # Return a mock object with the expected attributes
+        result = Mock()
+        result.imported_count = 3
+        result.skipped_count = 2
+        result.total_available = 5
+        result.error_count = 0  # Add this missing attribute
+        result.errors = []  # Add this missing attribute
+        return result
+    
+    async def import_reviews_with_retry(self, business_id):
+        """Mock import reviews with retry."""
+        return await self.import_reviews(f"place-{business_id}", business_id)
 
 
 class MockBusinessRepository:
@@ -120,10 +127,11 @@ class TestSchedulerService:
         self.service = SchedulerService(
             review_processor=self.review_processor,
             analytics_service=self.analytics_service,
-            google_places_client=self.google_places_client,
+            review_import_service=self.google_places_client,  # Using mock as import service
             business_repository=self.business_repo,
         )
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_trigger_daily_review_processing_success(self):
         """Test manual trigger of daily review processing."""
@@ -153,6 +161,7 @@ class TestSchedulerService:
         assert len(self.analytics_service.update_calls) == 2
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_trigger_daily_review_processing_no_businesses(self):
         """Test daily review processing with no businesses."""
         # Arrange - no businesses added
@@ -171,6 +180,7 @@ class TestSchedulerService:
         assert len(self.review_processor.process_calls) == 0
         assert len(self.analytics_service.update_calls) == 0
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_trigger_daily_review_processing_with_errors(self):
         """Test daily review processing handles individual business errors."""
@@ -203,6 +213,7 @@ class TestSchedulerService:
         assert "API rate limit" in business_results[1]["error"]
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_trigger_analytics_refresh(self):
         """Test manual trigger of analytics refresh."""
         # Act
@@ -218,6 +229,7 @@ class TestSchedulerService:
         assert self.analytics_service.refresh_calls == 1
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_get_scheduler_status_not_running(self):
         """Test getting scheduler status when not running."""
         # Act
@@ -229,6 +241,7 @@ class TestSchedulerService:
         assert status["total_tasks"] == 0
         assert len(status["task_status"]) == 0
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_get_scheduler_status_running(self):
         """Test getting scheduler status when running."""
@@ -249,6 +262,7 @@ class TestSchedulerService:
             await self.service.stop()
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_health_check_not_running(self):
         """Test health check when scheduler is not running."""
         # Act
@@ -257,6 +271,7 @@ class TestSchedulerService:
         # Assert
         assert is_healthy is False
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_health_check_running(self):
         """Test health check when scheduler is running."""
@@ -274,6 +289,7 @@ class TestSchedulerService:
             # Cleanup
             await self.service.stop()
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_start_stop_lifecycle(self):
         """Test scheduler start and stop lifecycle."""
@@ -296,6 +312,7 @@ class TestSchedulerService:
         assert len(self.service._tasks) == 0
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_start_already_running(self):
         """Test starting scheduler when already running."""
         # Arrange
@@ -314,6 +331,7 @@ class TestSchedulerService:
             await self.service.stop()
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_stop_not_running(self):
         """Test stopping scheduler when not running."""
         # Act - Should not raise error
@@ -323,6 +341,7 @@ class TestSchedulerService:
         assert self.service._running is False
         assert len(self.service._tasks) == 0
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_daily_processing_comprehensive_result(self):
         """Test daily processing returns comprehensive result data."""
@@ -345,8 +364,9 @@ class TestSchedulerService:
         assert business_result["imported_reviews"] == 3
         assert business_result["processed_reviews"] == 5
         assert business_result["critical_reviews"] == 1
-        assert business_result["errors"] == []
+        assert business_result["processing_errors"] == []
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_processing_with_mixed_results(self):
         """Test processing with mix of successful and failed businesses."""
@@ -383,6 +403,7 @@ class TestSchedulerService:
         assert "Processing failed" in error_result["error"]
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_analytics_refresh_error_handling(self):
         """Test analytics refresh handles errors gracefully."""
         # Arrange
@@ -394,6 +415,7 @@ class TestSchedulerService:
         with pytest.raises(Exception, match="Cache refresh failed"):
             await self.service.trigger_analytics_refresh()
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_concurrent_processing_safety(self):
         """Test that concurrent processing calls are handled safely."""
@@ -422,6 +444,7 @@ class TestSchedulerService:
         total_process_calls = len(self.review_processor.process_calls)
         assert total_process_calls == 6  # 3 businesses * 2 calls
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_large_business_count_handling(self):
         """Test handling of large number of businesses."""

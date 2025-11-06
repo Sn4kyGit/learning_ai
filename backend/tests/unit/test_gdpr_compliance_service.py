@@ -7,7 +7,7 @@ data subject rights, privacy notices, and data breach handling.
 
 import pytest
 from unittest.mock import Mock, AsyncMock
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 from backend.services.gdpr_compliance_service import (
@@ -41,9 +41,10 @@ class TestGDPRComplianceService:
             name="Test User",
             role="admin",
             language_preference="en",
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
 
+    @pytest.mark.asyncio
     async def test_record_consent_success(self, service, mock_db_session, sample_user):
         """Test successful consent recording."""
         # Arrange
@@ -69,6 +70,7 @@ class TestGDPRComplianceService:
         assert consent_record["ip_address"] == "192.168.1.1"
         assert "timestamp" in consent_record
 
+    @pytest.mark.asyncio
     async def test_record_consent_user_not_found(self, service, mock_db_session):
         """Test consent recording with non-existent user."""
         # Arrange
@@ -85,6 +87,7 @@ class TestGDPRComplianceService:
                 purpose="Test purpose",
             )
 
+    @pytest.mark.asyncio
     async def test_get_user_consents(self, service, sample_user):
         """Test retrieving user consent records."""
         # Act
@@ -96,6 +99,7 @@ class TestGDPRComplianceService:
         assert consents[0]["consent_type"] == "data_processing"
         assert consents[0]["granted"] is True
 
+    @pytest.mark.asyncio
     async def test_process_access_request(self, service, mock_db_session, sample_user):
         """Test data access request processing."""
         # Arrange
@@ -130,6 +134,7 @@ class TestGDPRComplianceService:
         assert "review_responses" in result
         assert "generated_at" in result
 
+    @pytest.mark.asyncio
     async def test_process_erasure_request(self, service, mock_db_session, sample_user):
         """Test data erasure request processing."""
         # Arrange
@@ -173,6 +178,7 @@ class TestGDPRComplianceService:
         assert result["deleted_records"]["user_profile"] == 1
         assert "completed_at" in result
 
+    @pytest.mark.asyncio
     async def test_process_portability_request(self, service, mock_db_session, sample_user):
         """Test data portability request processing."""
         # Arrange
@@ -205,10 +211,11 @@ class TestGDPRComplianceService:
         assert "metadata" in result
         assert result["metadata"]["format_version"] == "1.0"
 
+    @pytest.mark.asyncio
     async def test_log_data_breach(self, service):
         """Test data breach logging."""
         # Arrange
-        discovered_at = datetime.utcnow()
+        discovered_at = datetime.now(timezone.utc)
         contained_at = discovered_at + timedelta(hours=2)
 
         # Act
@@ -232,6 +239,7 @@ class TestGDPRComplianceService:
         assert "authority_notification_deadline" in breach_record
         assert "breach_id" in breach_record
 
+    @pytest.mark.asyncio
     async def test_get_privacy_notice(self, service):
         """Test privacy notice retrieval."""
         # Act
@@ -246,6 +254,7 @@ class TestGDPRComplianceService:
         assert "user_rights" in privacy_notice["content"]
         assert len(privacy_notice["content"]["user_rights"]) >= 6  # All GDPR rights
 
+    @pytest.mark.asyncio
     async def test_validate_data_minimization_compliant(self, service, mock_db_session):
         """Test data minimization validation for compliant business."""
         # Arrange
@@ -271,6 +280,7 @@ class TestGDPRComplianceService:
         assert len(validation_result["issues"]) == 0
         assert len(validation_result["recommendations"]) == 0
 
+    @pytest.mark.asyncio
     async def test_validate_data_minimization_non_compliant(self, service, mock_db_session):
         """Test data minimization validation for non-compliant business."""
         # Arrange
@@ -300,6 +310,7 @@ class TestGDPRComplianceService:
         assert "1 conversations older than 30 days" in validation_result["issues"][1]
         assert len(validation_result["recommendations"]) == 2
 
+    @pytest.mark.asyncio
     async def test_cleanup_expired_data(self, service, mock_db_session):
         """Test cleanup of expired data."""
         # Arrange
@@ -335,6 +346,7 @@ class TestGDPRComplianceService:
         assert cleanup_stats["old_analytics_deleted"] == 10
         mock_db_session.commit.assert_called_once()
 
+    @pytest.mark.asyncio
     async def test_process_data_subject_request_access(self, service, mock_db_session, sample_user):
         """Test processing data subject access request."""
         # Arrange
@@ -370,6 +382,7 @@ class TestGDPRComplianceService:
         assert result["request_type"] == "access"
         assert "user_profile" in result
 
+    @pytest.mark.asyncio
     async def test_process_data_subject_request_unknown_type(self, service, mock_db_session, sample_user):
         """Test processing unknown data subject request type."""
         # Arrange
@@ -388,6 +401,7 @@ class TestGDPRComplianceService:
         assert result["status"] == "acknowledged"
         assert "30 days" in result["message"]
 
+    @pytest.mark.asyncio
     async def test_trigger_breach_notifications_high_severity(self, service):
         """Test breach notification triggering for high severity breaches."""
         # Arrange
@@ -404,6 +418,7 @@ class TestGDPRComplianceService:
         # For now, we just ensure the method completes without error
         assert True
 
+    @pytest.mark.asyncio
     async def test_consent_withdrawal(self, service, mock_db_session, sample_user):
         """Test consent withdrawal functionality."""
         # Arrange
@@ -423,6 +438,7 @@ class TestGDPRComplianceService:
         assert consent_record["granted"] is False
         assert consent_record["consent_type"] == "marketing"
 
+    @pytest.mark.asyncio
     async def test_data_breach_severity_levels(self, service):
         """Test different data breach severity levels."""
         # Test low severity breach
@@ -431,7 +447,7 @@ class TestGDPRComplianceService:
             description="Minor configuration issue",
             affected_data_types=["system_logs"],
             affected_users_count=0,
-            discovered_at=datetime.utcnow(),
+            discovered_at=datetime.now(timezone.utc),
         )
         assert low_breach["notification_required"] is False
 
@@ -441,10 +457,11 @@ class TestGDPRComplianceService:
             description="Database compromise",
             affected_data_types=["user_profiles", "conversations", "reviews"],
             affected_users_count=10000,
-            discovered_at=datetime.utcnow(),
+            discovered_at=datetime.now(timezone.utc),
         )
         assert critical_breach["notification_required"] is True
 
+    @pytest.mark.asyncio
     async def test_privacy_notice_multilingual(self, service):
         """Test privacy notice in different languages."""
         # Test English
@@ -455,6 +472,7 @@ class TestGDPRComplianceService:
         notice_de = await service.get_privacy_notice("de")
         assert notice_de["language"] == "de"
 
+    @pytest.mark.asyncio
     async def test_data_minimization_edge_cases(self, service, mock_db_session):
         """Test data minimization validation edge cases."""
         # Test with exactly at retention limit

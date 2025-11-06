@@ -55,6 +55,7 @@ class TestGPT5NanoClassifier:
         assert classifier._request_timeout == 60
         assert classifier._client is not None
 
+    @pytest.mark.asyncio
     @patch('backend.ai.gpt5_classifier.AsyncOpenAI')
     async def test_classify_review_success(self, mock_openai_class):
         """Test successful single review classification."""
@@ -119,6 +120,7 @@ class TestGPT5NanoClassifier:
         assert usage_log["operation"] == "classify_single"
         assert usage_log["tokens_used"] == 150
 
+    @pytest.mark.asyncio
     @patch('backend.ai.gpt5_classifier.AsyncOpenAI')
     async def test_classify_review_with_invalid_json_response(self, mock_openai_class):
         """Test handling of invalid JSON response."""
@@ -156,6 +158,7 @@ class TestGPT5NanoClassifier:
         assert result.competitor_mentioned is False
         assert result.confidence_score == 0.5
 
+    @pytest.mark.asyncio
     @patch('backend.ai.gpt5_classifier.AsyncOpenAI')
     async def test_classify_review_rate_limit_retry(self, mock_openai_class):
         """Test retry logic for rate limit errors."""
@@ -203,6 +206,7 @@ class TestGPT5NanoClassifier:
         assert result.sentiment == "positive"
         assert mock_client.chat.completions.create.call_count == 2
 
+    @pytest.mark.asyncio
     @patch('backend.ai.gpt5_classifier.AsyncOpenAI')
     async def test_classify_review_max_retries_exceeded(self, mock_openai_class):
         """Test failure after max retries exceeded."""
@@ -233,6 +237,7 @@ class TestGPT5NanoClassifier:
         
         assert mock_client.chat.completions.create.call_count == 2
 
+    @pytest.mark.asyncio
     @patch('backend.ai.gpt5_classifier.AsyncOpenAI')
     async def test_classify_batch_success(self, mock_openai_class):
         """Test successful batch review classification."""
@@ -296,6 +301,8 @@ class TestGPT5NanoClassifier:
         assert self.cost_tracker.logged_usage[0]["business_id"] == "business-1"
         assert self.cost_tracker.logged_usage[1]["business_id"] == "business-2"
 
+    @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_classify_batch_empty_list(self):
         """Test batch classification with empty review list."""
         # Act
@@ -304,6 +311,8 @@ class TestGPT5NanoClassifier:
         # Assert
         assert results == []
 
+    @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_classify_batch_exceeds_limit(self):
         """Test batch classification with too many reviews."""
         # Arrange
@@ -313,6 +322,7 @@ class TestGPT5NanoClassifier:
         with pytest.raises(ValueError, match="Batch size cannot exceed 500 reviews"):
             await self.classifier.classify_batch(reviews)
 
+    @pytest.mark.asyncio
     @patch('backend.ai.gpt5_classifier.AsyncOpenAI')
     async def test_classify_batch_with_invalid_response(self, mock_openai_class):
         """Test batch classification with invalid API response."""
@@ -549,6 +559,7 @@ class TestGPT5NanoClassifierIntegration:
         """Set up test fixtures."""
         self.cost_tracker = MockCostTracker()
 
+    @pytest.mark.asyncio
     @patch('backend.ai.gpt5_classifier.AsyncOpenAI')
     async def test_performance_batch_processing_under_60_seconds(self, mock_openai_class):
         """Test that batch processing of 500 reviews completes within 60 seconds."""
@@ -606,6 +617,7 @@ class TestGPT5NanoClassifierIntegration:
         assert len(results) == 500
         assert all(isinstance(r, ClassificationResult) for r in results)
 
+    @pytest.mark.asyncio
     @patch('backend.ai.gpt5_classifier.AsyncOpenAI')
     async def test_cost_tracking_accuracy(self, mock_openai_class):
         """Test accuracy of cost tracking calculations."""

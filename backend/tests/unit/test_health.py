@@ -24,7 +24,7 @@ class TestHealthEndpoints:
         assert data["status"] == "healthy"
         assert "timestamp" in data
         assert data["version"] == "1.0.0"
-        assert data["database"] == "not_checked"
+        assert data["service"] == "Local Business Intelligence Bot"
 
     def test_liveness_check(self):
         """Test liveness probe endpoint."""

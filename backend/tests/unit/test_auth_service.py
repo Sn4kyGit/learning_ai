@@ -158,6 +158,7 @@ class TestAuthService:
             AuthService.verify_token(invalid_token, "access")
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_get_user_by_email_found(self, test_db_session):
         """Test getting user by email when user exists."""
         # Arrange
@@ -180,6 +181,7 @@ class TestAuthService:
         assert result.name == "Test User"
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_get_user_by_email_not_found(self, test_db_session):
         """Test getting user by email when user doesn't exist."""
         # Arrange
@@ -191,6 +193,7 @@ class TestAuthService:
         # Assert
         assert result is None
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_get_user_by_id_found(self, test_db_session):
         """Test getting user by ID when user exists."""
@@ -215,6 +218,7 @@ class TestAuthService:
         assert result.id == user_id
         assert result.email == "test@example.com"
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_authenticate_user_success(self, test_db_session):
         """Test successful user authentication."""
@@ -241,6 +245,7 @@ class TestAuthService:
         assert result.last_login is not None
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_authenticate_user_wrong_password(self, test_db_session):
         """Test authentication with wrong password."""
         # Arrange
@@ -264,6 +269,7 @@ class TestAuthService:
         assert result is None
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_authenticate_user_not_found(self, test_db_session):
         """Test authentication with non-existent user."""
         # Arrange
@@ -275,6 +281,7 @@ class TestAuthService:
         # Assert
         assert result is None
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_create_user_success(self, test_db_session):
         """Test successful user creation."""
@@ -298,6 +305,7 @@ class TestAuthService:
         assert result.password_hash != "test_pass"  # Should be hashed
         assert result.password_hash == "hashed_test_pass"
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_create_user_duplicate_email(self, test_db_session):
         """Test user creation with duplicate email."""
@@ -329,6 +337,7 @@ class TestAuthService:
         assert "already exists" in str(exc_info.value.detail)
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_login_user_success(self, test_db_session):
         """Test successful user login."""
         # Arrange
@@ -355,6 +364,7 @@ class TestAuthService:
         assert result.user.email == "test@example.com"
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_login_user_invalid_credentials(self, test_db_session):
         """Test login with invalid credentials."""
         # Arrange
@@ -366,6 +376,7 @@ class TestAuthService:
         
         assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_check_user_business_access_super_admin(self, test_db_session):
         """Test business access check for super admin."""
@@ -390,6 +401,7 @@ class TestAuthService:
         # Assert
         assert result is True
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_check_user_business_access_no_access(self, test_db_session):
         """Test business access check when user has no access."""

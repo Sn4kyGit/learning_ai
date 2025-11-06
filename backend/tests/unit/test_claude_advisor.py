@@ -75,6 +75,7 @@ class TestClaudeHaikuAdvisor:
         assert advisor._max_tokens == 2000
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_generate_response_success(self):
         """Test successful response generation."""
         # Arrange
@@ -112,6 +113,7 @@ class TestClaudeHaikuAdvisor:
             assert call_args[1]["temperature"] == 0.1
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_generate_response_with_conversation_history(self):
         """Test response generation with conversation history."""
         # Arrange
@@ -148,6 +150,7 @@ class TestClaudeHaikuAdvisor:
             assert messages[1]["content"] == "Your restaurant is performing well."
             assert messages[2]["content"] == "What about my service quality?"
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_generate_response_multi_language(self):
         """Test response generation in different languages."""
@@ -188,6 +191,7 @@ class TestClaudeHaikuAdvisor:
                 elif language == "ar":
                     assert "Arabic" in system_prompt
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_generate_report_success(self):
         """Test successful weekly report generation."""
@@ -238,6 +242,7 @@ class TestClaudeHaikuAdvisor:
             assert period_diff.days == report_period_days
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_generate_report_malformed_json_fallback(self):
         """Test report generation with malformed JSON response."""
         # Arrange
@@ -260,6 +265,7 @@ class TestClaudeHaikuAdvisor:
             assert len(result.action_items) >= 3
             assert "Service quality" in result.top_themes
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_cost_tracking_logged(self):
         """Test that cost tracking is properly logged."""
@@ -287,6 +293,7 @@ class TestClaudeHaikuAdvisor:
             assert log["tokens_used"] == 150  # input + output
             assert log["cost_usd"] > 0
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_api_retry_on_rate_limit(self):
         """Test retry logic on rate limit errors."""
@@ -323,6 +330,7 @@ class TestClaudeHaikuAdvisor:
             assert mock_create.call_count == 2
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_api_retry_exhausted_raises_exception(self):
         """Test that exhausted retries raise the last exception."""
         # Arrange
@@ -349,6 +357,7 @@ class TestClaudeHaikuAdvisor:
             assert mock_create.call_count == 2  # max_retries = 2
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_api_timeout_retry(self):
         """Test retry logic on API timeout errors."""
         # Arrange
@@ -373,6 +382,7 @@ class TestClaudeHaikuAdvisor:
             assert result.message == "Success after timeout retry"
             assert mock_create.call_count == 2
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_non_retryable_error_raises_immediately(self):
         """Test that non-retryable errors are raised immediately."""

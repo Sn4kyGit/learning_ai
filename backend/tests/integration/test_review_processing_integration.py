@@ -8,7 +8,7 @@ AI classification, alert handling, and analytics updates.
 import pytest
 from decimal import Decimal
 from uuid import uuid4
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
 from backend.services.review.processor import ReviewProcessingService
 from backend.services.analytics_service import AnalyticsService
@@ -61,7 +61,7 @@ class TestReviewProcessingIntegration:
                 rating=5,
                 text="Excellent food and outstanding service! Highly recommend.",
                 language="en",
-                published_at=datetime.utcnow() - timedelta(days=1),
+                published_at=datetime.now(timezone.utc) - timedelta(days=1),
                 source="google",
                 external_id="review-positive-1",
             ),
@@ -71,7 +71,7 @@ class TestReviewProcessingIntegration:
                 rating=1,
                 text="Terrible food quality and very slow service. Will not return.",
                 language="en",
-                published_at=datetime.utcnow() - timedelta(days=2),
+                published_at=datetime.now(timezone.utc) - timedelta(days=2),
                 source="google",
                 external_id="review-negative-1",
             ),
@@ -81,7 +81,7 @@ class TestReviewProcessingIntegration:
                 rating=3,
                 text="Food was okay, nothing special. Service was decent.",
                 language="en",
-                published_at=datetime.utcnow() - timedelta(days=3),
+                published_at=datetime.now(timezone.utc) - timedelta(days=3),
                 source="google",
                 external_id="review-neutral-1",
             ),
@@ -91,7 +91,7 @@ class TestReviewProcessingIntegration:
                 rating=4,
                 text="Sehr gutes Essen und freundlicher Service!",
                 language="de",
-                published_at=datetime.utcnow() - timedelta(days=4),
+                published_at=datetime.now(timezone.utc) - timedelta(days=4),
                 source="google",
                 external_id="review-german-1",
             ),
@@ -107,6 +107,7 @@ class TestReviewProcessingIntegration:
         
         return reviews
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_complete_review_processing_pipeline(
         self,
@@ -169,6 +170,7 @@ class TestReviewProcessingIntegration:
         # with a mocked detect_language method, so we can't check call_count directly
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_analytics_service_integration(
         self,
         business,
@@ -226,6 +228,7 @@ class TestReviewProcessingIntegration:
         assert len(trend_analysis.key_insights) > 0
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_business_rating_update_integration(
         self,
         business,
@@ -267,6 +270,7 @@ class TestReviewProcessingIntegration:
         assert abs(float(updated_business.avg_rating) - expected_avg) < 0.01
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_multi_language_processing_integration(
         self,
         business,
@@ -303,7 +307,7 @@ class TestReviewProcessingIntegration:
                 rating=5,
                 text="Great food and excellent service!",
                 language="unknown",  # Will be detected
-                published_at=datetime.utcnow(),
+                published_at=datetime.now(timezone.utc),
                 source="google",
                 external_id="review-en-1",
             ),
@@ -313,7 +317,7 @@ class TestReviewProcessingIntegration:
                 rating=4,
                 text="Sehr gutes Essen und freundlicher Service!",
                 language="unknown",  # Will be detected
-                published_at=datetime.utcnow(),
+                published_at=datetime.now(timezone.utc),
                 source="google",
                 external_id="review-de-1",
             ),
@@ -323,7 +327,7 @@ class TestReviewProcessingIntegration:
                 rating=5,
                 text="Mükemmel yemek ve harika hizmet!",
                 language="unknown",  # Will be detected
-                published_at=datetime.utcnow(),
+                published_at=datetime.now(timezone.utc),
                 source="google",
                 external_id="review-tr-1",
             ),
@@ -349,6 +353,7 @@ class TestReviewProcessingIntegration:
         assert "de" in languages
         # Note: Turkish detection might be challenging for short text
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_error_recovery_integration(
         self,
@@ -386,7 +391,7 @@ class TestReviewProcessingIntegration:
             rating=4,
             text="Good food",
             language="en",
-            published_at=datetime.utcnow(),
+            published_at=datetime.now(timezone.utc),
             source="google",
             external_id="review-error-test-1",
         )
@@ -407,6 +412,7 @@ class TestReviewProcessingIntegration:
         classifications = await repositories["classification"].get_by_business_id(business.id)
         assert len(classifications) == 0
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_scheduler_integration(
         self,
@@ -463,7 +469,7 @@ class TestReviewProcessingIntegration:
             rating=5,
             text="Great experience!",
             language="en",
-            published_at=datetime.utcnow(),
+            published_at=datetime.now(timezone.utc),
             source="google",
             external_id="scheduled-review-1",
         )
@@ -489,6 +495,7 @@ class TestReviewProcessingIntegration:
             business.google_place_id, business.id
         )
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_cache_integration_with_processing(
         self,
@@ -545,6 +552,7 @@ class TestReviewProcessingIntegration:
         assert cache_stats["active_entries"] > 0
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_concurrent_processing_integration(
         self,
         test_db_session,
@@ -595,7 +603,7 @@ class TestReviewProcessingIntegration:
                 rating=4,
                 text=f"Good food at {business.name}",
                 language="en",
-                published_at=datetime.utcnow(),
+                published_at=datetime.now(timezone.utc),
                 source="google",
                 external_id=f"concurrent-review-{business.id}",
             )

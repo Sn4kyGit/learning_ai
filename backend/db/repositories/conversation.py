@@ -7,7 +7,7 @@ and message tracking for the business advisory chat system.
 
 import logging
 from typing import List, Optional, Dict, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from sqlalchemy import select, desc, and_
@@ -94,7 +94,7 @@ class ConversationRepository(BaseRepository[Conversation, ConversationCreate, Co
             Most recent conversation or None if not found
         """
         # Consider a conversation active if it was updated within the last 24 hours
-        cutoff_time = datetime.utcnow() - timedelta(hours=24)
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=24)
         
         query = (
             select(Conversation)
@@ -181,7 +181,7 @@ class ConversationRepository(BaseRepository[Conversation, ConversationCreate, Co
         # Update conversation timestamp
         conversation = await self.get_by_id(conversation_id)
         if conversation:
-            conversation.updated_at = datetime.utcnow()
+            conversation.updated_at = datetime.now(timezone.utc)
         
         await self._session.commit()
         await self._session.refresh(message)
@@ -256,7 +256,7 @@ class ConversationRepository(BaseRepository[Conversation, ConversationCreate, Co
         Returns:
             Number of conversations deleted
         """
-        cutoff_date = datetime.utcnow() - timedelta(days=days_to_keep)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days_to_keep)
         
         # Get conversations to delete
         query = select(Conversation).where(Conversation.updated_at < cutoff_date)
@@ -291,7 +291,7 @@ class ConversationRepository(BaseRepository[Conversation, ConversationCreate, Co
         total_conversations = len(list(total_result.scalars().all()))
         
         # Count active conversations (last 24 hours)
-        cutoff_time = datetime.utcnow() - timedelta(hours=24)
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=24)
         active_query = (
             select(Conversation)
             .where(

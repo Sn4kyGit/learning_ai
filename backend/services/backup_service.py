@@ -143,7 +143,8 @@ class BackupService:
                 compressed_path = await self._compress_backup(dump_path)
                 original_size = os.path.getsize(dump_path)
                 compressed_size = os.path.getsize(compressed_path)
-                metadata.compression_ratio = compressed_size / original_size
+                # Avoid division by zero
+                metadata.compression_ratio = compressed_size / original_size if original_size > 0 else 0.0
                 
                 # Remove original uncompressed file
                 os.remove(dump_path)

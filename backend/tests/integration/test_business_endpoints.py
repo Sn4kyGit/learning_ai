@@ -439,6 +439,7 @@ class TestBusinessAccessControl:
         assert response.status_code == 403
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_viewer_role_read_only_access(self, client, test_db_session, test_business):
         """Test that viewer role has read-only access."""
         # Arrange - Create viewer user

@@ -145,6 +145,7 @@ class TestAuthEndpoints:
         assert response.status_code == 422  # Validation error
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_login_success(self, client, test_user_data):
         """Test successful user login."""
         # Arrange
@@ -181,6 +182,7 @@ class TestAuthEndpoints:
         assert "detail" in data
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_login_wrong_password(self, client, test_user_data):
         """Test login with wrong password."""
         # Arrange
@@ -197,6 +199,7 @@ class TestAuthEndpoints:
         data = response.json()
         assert "detail" in data
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_get_current_user_success(self, client, test_user_data):
         """Test getting current user info with valid token."""
@@ -241,6 +244,7 @@ class TestAuthEndpoints:
         assert response.status_code == 401
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_logout_success(self, client, test_user_data):
         """Test successful logout."""
         # Arrange - Login first to get token
@@ -262,6 +266,7 @@ class TestAuthEndpoints:
         data = response.json()
         assert "message" in data
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_get_accessible_businesses(self, client, test_user_data):
         """Test getting accessible businesses for user."""
@@ -288,6 +293,7 @@ class TestAuthEndpoints:
 class TestRoleBasedAccess:
     """Test suite for role-based access control."""
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_super_admin_access(self, client, test_db_session):
         """Test super admin can access admin endpoints."""
@@ -321,6 +327,7 @@ class TestRoleBasedAccess:
         assert response.status_code == 200
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_regular_user_denied_admin_access(self, client, test_db_session):
         """Test regular user cannot access admin endpoints."""
         # Arrange - Create regular user
@@ -352,6 +359,7 @@ class TestRoleBasedAccess:
         # Assert
         assert response.status_code == 403  # Forbidden
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_admin_role_hierarchy(self, client, test_db_session):
         """Test admin role can access viewer-level endpoints."""

@@ -515,6 +515,7 @@ class TestChatAccessControl:
         assert response.status_code == 403
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_cross_business_access_denied(self, client, test_db_session, test_organization):
         """Test that users cannot access chat for businesses they don't have access to."""
         # Arrange - Create another business and user

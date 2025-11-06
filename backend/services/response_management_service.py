@@ -8,7 +8,7 @@ management for urgent reviews.
 
 import logging
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import List, Dict, Optional, Any
 from dataclasses import dataclass
@@ -245,7 +245,7 @@ class ResponseManagementService:
                     continue
                 
                 # Calculate days since published
-                days_since = (datetime.utcnow() - review.published_at).days
+                days_since = (datetime.now(timezone.utc) - review.published_at).days
                 
                 # Check if review already has a response
                 has_response = await self._check_has_response(review.id)
@@ -295,7 +295,7 @@ class ResponseManagementService:
         """
         try:
             # Calculate date range
-            end_date = datetime.utcnow()
+            end_date = datetime.now(timezone.utc)
             start_date = end_date - timedelta(days=period_days)
             
             # Get total reviews in period

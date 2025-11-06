@@ -129,6 +129,7 @@ class TestUserManagementEndpoints:
     """Test suite for user management endpoints."""
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_grant_business_access_success(
         self, client, test_admin_user, test_viewer_user, test_business
     ):
@@ -157,6 +158,7 @@ class TestUserManagementEndpoints:
         assert data["permission_level"] == "read_only"
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_grant_business_access_insufficient_permissions(
         self, client, test_viewer_user, test_business
     ):
@@ -181,6 +183,7 @@ class TestUserManagementEndpoints:
         assert response.status_code == 403  # Forbidden
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_grant_business_access_invalid_permission_level(
         self, client, test_admin_user, test_viewer_user, test_business
     ):
@@ -204,6 +207,7 @@ class TestUserManagementEndpoints:
         # Assert
         assert response.status_code == 400
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_revoke_business_access_success(
         self, client, test_admin_user, test_viewer_user, test_business, test_db_session
@@ -231,6 +235,7 @@ class TestUserManagementEndpoints:
         assert response.status_code == 204
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_revoke_business_access_not_found(
         self, client, test_admin_user
     ):
@@ -247,6 +252,7 @@ class TestUserManagementEndpoints:
         # Assert
         assert response.status_code == 404
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_update_business_access_success(
         self, client, test_admin_user, test_viewer_user, test_business, test_db_session
@@ -283,6 +289,7 @@ class TestUserManagementEndpoints:
         assert data["permission_level"] == "full_access"
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_get_business_users_success(
         self, client, test_admin_user, test_viewer_user, test_business, test_db_session
     ):
@@ -313,6 +320,7 @@ class TestUserManagementEndpoints:
         assert data[0]["user"]["email"] == test_viewer_user["user"].email
         assert data[0]["permission_level"] == "read_only"
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_get_user_businesses_success(
         self, client, test_admin_user, test_viewer_user, test_business, test_db_session
@@ -345,6 +353,7 @@ class TestUserManagementEndpoints:
         assert data[0]["permission_level"] == "read_only"
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_get_my_businesses_success(
         self, client, test_viewer_user, test_business, test_db_session
     ):
@@ -375,6 +384,7 @@ class TestUserManagementEndpoints:
         assert data[0]["business"]["name"] == test_business.name
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_get_my_businesses_super_admin(
         self, client, test_super_admin_user, test_business
     ):
@@ -401,6 +411,7 @@ class TestUserManagementEndpoints:
             assert business_data["permission_level"] == "full_access"
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_get_organization_users_success(
         self, client, test_admin_user, test_organization
     ):
@@ -422,6 +433,7 @@ class TestUserManagementEndpoints:
         user_emails = [user["email"] for user in data]
         assert test_admin_user["user"].email in user_emails
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_bulk_grant_organization_access_success(
         self, client, test_super_admin_user, test_organization, test_business
@@ -453,6 +465,7 @@ class TestUserManagementEndpoints:
         assert "granted_count" in data
         assert data["granted_count"] >= 0
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_bulk_grant_organization_access_insufficient_permissions(
         self, client, test_admin_user, test_organization, test_business

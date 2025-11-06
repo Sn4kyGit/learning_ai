@@ -1,0 +1,78 @@
+{
+  "timestamp": "2025-11-06T15:54:30.684999",
+  "framework_version": "1.0.0",
+  "test_environment": "ci",
+  "total_tests": 1,
+  "passed_tests": 1,
+  "failed_tests": 0,
+  "overall_success": true,
+  "test_results": [
+    {
+      "test_name": "api_performance",
+      "duration": 21.726680755615234,
+      "success": true,
+      "error_message": null,
+      "memory_usage": {
+        "before_mb": 26.703125,
+        "after_mb": 26.703125,
+        "peak_mb": 26.703125,
+        "growth_mb": 0.0
+      },
+      "metrics": [
+        {
+          "name": "simple_queries",
+          "value": 0.2087540626525879,
+          "unit": "seconds",
+          "threshold": 0.5,
+          "passed": true,
+          "timestamp": "2025-11-06T15:54:09.167097"
+        },
+        {
+          "name": "ai_operations",
+          "value": 1.5057086944580078,
+          "unit": "seconds",
+          "threshold": 3.0,
+          "passed": true,
+          "timestamp": "2025-11-06T15:54:10.672910"
+        },
+        {
+          "name": "batch_processing",
+          "value": 20.011662006378174,
+          "unit": "seconds",
+          "threshold": 60.0,
+          "passed": true,
+          "timestamp": "2025-11-06T15:54:30.684685"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "api_response_times": {
+      "simple_queries": {
+        "value": 0.2087540626525879,
+        "unit": "seconds",
+        "threshold": 0.5,
+        "passed": true
+      },
+      "ai_operations": {
+        "value": 1.5057086944580078,
+        "unit": "seconds",
+        "threshold": 3.0,
+        "passed": true
+      },
+      "batch_processing": {
+        "value": 20.011662006378174,
+        "unit": "seconds",
+        "threshold": 60.0,
+        "passed": true
+      }
+    },
+    "database_queries": {},
+    "memory_usage": {
+      "total_growth_mb": 0.0,
+      "peak_usage_mb": 26.703125,
+      "growth_threshold_met": true
+    },
+    "concurrent_users": {}
+  }
+}

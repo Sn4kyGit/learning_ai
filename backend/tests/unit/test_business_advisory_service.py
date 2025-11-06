@@ -177,6 +177,7 @@ class TestBusinessAdvisoryService:
         self.user_id = uuid4()
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_send_chat_message_creates_new_conversation(self):
         """Test sending chat message creates new conversation."""
         # Arrange
@@ -201,6 +202,7 @@ class TestBusinessAdvisoryService:
         key = f"{self.business_id}_{self.user_id}"
         assert key in self.conversation_repo.conversations
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_send_chat_message_uses_existing_conversation(self):
         """Test sending chat message uses existing active conversation."""
@@ -231,6 +233,7 @@ class TestBusinessAdvisoryService:
         assert messages[1].role == "assistant"
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_send_chat_message_multi_language(self):
         """Test sending chat message in different languages."""
         # Arrange
@@ -251,6 +254,7 @@ class TestBusinessAdvisoryService:
             assert response.language == language
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_send_chat_message_business_not_found(self):
         """Test sending chat message when business doesn't exist."""
         # Arrange
@@ -267,6 +271,7 @@ class TestBusinessAdvisoryService:
         with pytest.raises(ValueError, match="Business .* not found"):
             await self.service.send_chat_message(request, self.user_id)
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_generate_weekly_report_success(self):
         """Test successful weekly report generation."""
@@ -299,6 +304,7 @@ class TestBusinessAdvisoryService:
         assert period_diff.days == 7
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_generate_weekly_report_multi_language(self):
         """Test weekly report generation in different languages."""
         # Arrange
@@ -319,6 +325,7 @@ class TestBusinessAdvisoryService:
             assert response.language == language
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_generate_weekly_report_custom_period(self):
         """Test weekly report generation with custom period."""
         # Arrange
@@ -337,6 +344,7 @@ class TestBusinessAdvisoryService:
         assert period_diff.days == 14
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_generate_weekly_report_business_not_found(self):
         """Test weekly report generation when business doesn't exist."""
         # Arrange
@@ -352,6 +360,7 @@ class TestBusinessAdvisoryService:
         with pytest.raises(ValueError, match="Business .* not found"):
             await self.service.generate_weekly_report(request)
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_get_conversation_history(self):
         """Test getting conversation history."""
@@ -382,6 +391,7 @@ class TestBusinessAdvisoryService:
         assert len(conversation_response.messages) == 2
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_get_conversation_stats(self):
         """Test getting conversation statistics."""
         # Act
@@ -394,6 +404,7 @@ class TestBusinessAdvisoryService:
         assert stats["avg_messages_per_conversation"] == 5.0
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_cleanup_old_conversations(self):
         """Test cleaning up old conversations."""
         # Act
@@ -402,6 +413,7 @@ class TestBusinessAdvisoryService:
         # Assert
         assert deleted_count == 3
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_create_business_context(self):
         """Test creating business context from business model."""
@@ -426,6 +438,7 @@ class TestBusinessAdvisoryService:
         assert context.competitor_mentions == 0  # Default value
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_create_business_context_handles_none_values(self):
         """Test creating business context handles None values gracefully."""
         # Arrange
@@ -443,6 +456,7 @@ class TestBusinessAdvisoryService:
         assert context.total_reviews == 0
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_get_or_create_conversation_creates_new(self):
         """Test get or create conversation creates new when none exists."""
         # Act
@@ -455,6 +469,7 @@ class TestBusinessAdvisoryService:
         assert conversation.user_id == self.user_id
         assert conversation.language == "en"
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_get_or_create_conversation_returns_existing(self):
         """Test get or create conversation returns existing active conversation."""
@@ -471,6 +486,7 @@ class TestBusinessAdvisoryService:
         # Assert
         assert conversation.id == existing_conversation.id
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_conversation_context_management(self):
         """Test that conversation context is properly managed across messages."""

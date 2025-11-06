@@ -8,7 +8,7 @@ and multi-channel notification delivery.
 import logging
 from typing import List, Dict, Any, Optional
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import dataclass
 
 from backend.ai.base import ClassificationResult
@@ -95,7 +95,7 @@ class AlertService:
                     "urgency": classification.urgency,
                     "confidence": float(classification.confidence_score),
                 },
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
             )
 
             # Get notification recipients for the business
@@ -138,7 +138,7 @@ class AlertService:
                     "competitor_mentioned": True,
                     "confidence": float(classification.confidence_score),
                 },
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
             )
 
             # Get Super-Admin recipients (competitor mentions go to Super-Admins)
@@ -189,7 +189,7 @@ class AlertService:
                         "new_rating": new_rating,
                         "threshold": threshold,
                     },
-                    created_at=datetime.utcnow(),
+                    created_at=datetime.now(timezone.utc),
                 )
 
                 recipients = await self._get_business_recipients(business_id)

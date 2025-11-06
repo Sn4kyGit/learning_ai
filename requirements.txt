@@ -33,6 +33,8 @@ emails>=0.6.0
 
 # Logging and monitoring
 structlog>=23.0.0
+psutil>=5.9.0
+prometheus-client>=0.17.0
 
 # Development and testing
 pytest>=7.4.0

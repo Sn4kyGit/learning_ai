@@ -7,7 +7,7 @@ including CRUD operations and review analysis queries.
 
 from typing import List, Optional, Dict, Any
 from uuid import UUID
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -145,7 +145,7 @@ class ReviewRepository(BaseRepository[Review, ReviewCreate, ReviewResponse]):
             List of recent reviews
         """
         try:
-            cutoff_date = datetime.utcnow() - timedelta(days=days)
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
             
             result = await self.session.execute(
                 select(Review)
@@ -322,7 +322,7 @@ class ReviewRepository(BaseRepository[Review, ReviewCreate, ReviewResponse]):
             language_distribution = {row.language: row.count for row in lang_dist}
 
             # Recent activity (last 30 days)
-            thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+            thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
             recent_count = await self.session.execute(
                 select(func.count(Review.id))
                 .where(
@@ -428,3 +428,29 @@ class ReviewRepository(BaseRepository[Review, ReviewCreate, ReviewResponse]):
         except Exception as e:
             logger.error(f"Error getting reviews needing response: {e}")
             raise RepositoryError(f"Failed to get reviews needing response: {str(e)}")
+
+    async def get_recent_imports(
+        self, 
+        business_id: UUID, 
+        limit: int = 10
+    ) -> List[Review]:
+        """Get recently imported reviews for import history tracking.
+
+        Args:
+            business_id: Business UUID
+            limit: Maximum number of reviews to return
+
+        Returns:
+            List of recently imported reviews
+        """
+        try:
+            result = await self.session.execute(
+                select(Review)
+                .where(Review.business_id == business_id)
+                .order_by(desc(Review.created_at))
+                .limit(limit * 10)  # Get more to group by import batches
+            )
+            return list(result.scalars().all())
+        except Exception as e:
+            logger.error(f"Error getting recent imports for business {business_id}: {e}")
+            raise RepositoryError(f"Failed to get recent imports: {str(e)}")

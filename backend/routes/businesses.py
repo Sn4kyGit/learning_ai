@@ -463,19 +463,291 @@ async def get_import_status(
     try:
         # TODO: Add business access validation
         status_info = await import_service.get_import_status(business_id)
-        
-        return {
-            "business_id": str(business_id),
-            "last_import": status_info.get("last_import"),
-            "total_imported": status_info.get("total_imported", 0),
-            "last_import_count": status_info.get("last_import_count", 0),
-            "next_scheduled_import": status_info.get("next_scheduled_import"),
-            "import_errors": status_info.get("import_errors", []),
-        }
+        return status_info
         
     except Exception as e:
         logger.error(f"Failed to get import status for business {business_id}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve import status"
+        )
+
+
+@router.get(
+    "/{business_id}/import-status/real-time",
+    responses={
+        404: {"model": ErrorResponse, "description": "Business not found"},
+    },
+)
+async def get_real_time_import_status(
+    business_id: UUID,
+    current_user: User = Depends(get_current_user),
+    import_service: ReviewImportService = Depends(get_review_import_service),
+):
+    """Get real-time import status for active imports.
+    
+    Args:
+        business_id: Business ID
+        current_user: Current authenticated user
+        import_service: Review import service
+        
+    Returns:
+        dict: Real-time import status
+    """
+    try:
+        # TODO: Add business access validation
+        status_info = await import_service.get_real_time_status(business_id)
+        return status_info
+        
+    except Exception as e:
+        logger.error(f"Failed to get real-time import status for business {business_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve real-time import status"
+        )
+
+
+@router.get(
+    "/{business_id}/import-history",
+    responses={
+        404: {"model": ErrorResponse, "description": "Business not found"},
+    },
+)
+async def get_import_history(
+    business_id: UUID,
+    limit: int = Query(10, ge=1, le=50, description="Maximum number of history entries"),
+    current_user: User = Depends(get_current_user),
+    import_service: ReviewImportService = Depends(get_review_import_service),
+):
+    """Get import history for a business.
+    
+    Args:
+        business_id: Business ID
+        limit: Maximum number of history entries
+        current_user: Current authenticated user
+        import_service: Review import service
+        
+    Returns:
+        dict: Import history
+    """
+    try:
+        # TODO: Add business access validation
+        history = await import_service.get_import_history(business_id, limit)
+        
+        return {
+            "business_id": str(business_id),
+            "import_history": history,
+            "total_entries": len(history)
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get import history for business {business_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve import history"
+        )
+
+
+@router.post(
+    "/{business_id}/import-reviews/manual",
+    response_model=ImportReviewsResponse,
+    responses={
+        404: {"model": ErrorResponse, "description": "Business not found"},
+        400: {"model": ErrorResponse, "description": "Bad Request"},
+        409: {"model": ErrorResponse, "description": "Import already in progress"},
+    },
+)
+async def start_manual_import(
+    business_id: UUID,
+    import_request: ImportReviewsRequest,
+    current_user: User = Depends(get_current_user),
+    import_service: ReviewImportService = Depends(get_review_import_service),
+) -> ImportReviewsResponse:
+    """Start manual review import with progress tracking.
+    
+    Args:
+        business_id: Business ID
+        import_request: Import configuration
+        current_user: Current authenticated user
+        import_service: Review import service
+        
+    Returns:
+        ImportReviewsResponse: Import results
+        
+    Raises:
+        HTTPException: If import fails or already in progress
+    """
+    try:
+        # TODO: Add business access validation
+        
+        # Check if import is already in progress
+        current_status = await import_service.get_real_time_status(business_id)
+        if current_status.get("is_active", False):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Import already in progress for this business"
+            )
+        
+        result = await import_service.start_manual_import(
+            business_id,
+            max_reviews=import_request.max_reviews
+        )
+        
+        return ImportReviewsResponse(
+            business_id=str(business_id),
+            imported_count=result.imported_count,
+            skipped_count=result.duplicate_count,
+            total_processed=result.total_found,
+            errors=result.errors,
+        )
+        
+    except HTTPException:
+        raise
+    except ValueError as e:
+        if "already in progress" in str(e):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=str(e)
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Failed to start manual import for business {business_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Manual import failed"
+        )
+
+
+@router.get(
+    "/search/google-places",
+    responses={
+        400: {"model": ErrorResponse, "description": "Bad Request"},
+    },
+)
+async def search_google_places(
+    query: str = Query(..., description="Search query for places"),
+    location: Optional[str] = Query(None, description="Location bias (lat,lng format)"),
+    radius: int = Query(5000, ge=100, le=50000, description="Search radius in meters"),
+    current_user: User = Depends(get_current_user),
+):
+    """Search Google Places for businesses.
+    
+    Args:
+        query: Search query (e.g., "Italian restaurant")
+        location: Optional location bias (lat,lng format)
+        radius: Search radius in meters
+        current_user: Current authenticated user
+        
+    Returns:
+        dict: Search results from Google Places
+        
+    Raises:
+        HTTPException: If search fails
+    """
+    try:
+        google_places_client = GooglePlacesClient()
+        results = await google_places_client.search_places(
+            query=query,
+            location=location,
+            radius=radius
+        )
+        
+        # Format results for frontend consumption
+        formatted_results = []
+        for place in results:
+            formatted_results.append({
+                "place_id": place.get("place_id"),
+                "name": place.get("name"),
+                "address": place.get("formatted_address"),
+                "rating": place.get("rating"),
+                "user_ratings_total": place.get("user_ratings_total"),
+                "types": place.get("types", []),
+                "geometry": place.get("geometry", {}),
+                "photos": place.get("photos", []),
+                "price_level": place.get("price_level"),
+                "business_status": place.get("business_status"),
+            })
+        
+        return {
+            "results": formatted_results,
+            "query": query,
+            "location": location,
+            "radius": radius,
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to search Google Places: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Google Places search failed"
+        )
+
+
+@router.get(
+    "/google-places/{place_id}/details",
+    responses={
+        400: {"model": ErrorResponse, "description": "Bad Request"},
+        404: {"model": ErrorResponse, "description": "Place not found"},
+    },
+)
+async def get_google_place_details(
+    place_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    """Get detailed information for a Google Place.
+    
+    Args:
+        place_id: Google Place ID
+        current_user: Current authenticated user
+        
+    Returns:
+        dict: Detailed place information
+        
+    Raises:
+        HTTPException: If place not found or API call fails
+    """
+    try:
+        google_places_client = GooglePlacesClient()
+        place_details = await google_places_client.get_place_details(place_id)
+        
+        if not place_details:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Place not found"
+            )
+        
+        # Format details for frontend consumption
+        formatted_details = {
+            "place_id": place_details.get("place_id"),
+            "name": place_details.get("name"),
+            "formatted_address": place_details.get("formatted_address"),
+            "formatted_phone_number": place_details.get("formatted_phone_number"),
+            "international_phone_number": place_details.get("international_phone_number"),
+            "website": place_details.get("website"),
+            "rating": place_details.get("rating"),
+            "user_ratings_total": place_details.get("user_ratings_total"),
+            "types": place_details.get("types", []),
+            "geometry": place_details.get("geometry", {}),
+            "photos": place_details.get("photos", []),
+            "price_level": place_details.get("price_level"),
+            "business_status": place_details.get("business_status"),
+            "opening_hours": place_details.get("opening_hours", {}),
+            "reviews": place_details.get("reviews", []),
+        }
+        
+        return {
+            "place_details": formatted_details,
+            "place_id": place_id,
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get Google Place details for {place_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve place details"
         )

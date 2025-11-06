@@ -9,7 +9,7 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import uuid4
-from datetime import datetime
+from datetime import datetime, timezone
 
 from backend.db.models import Organization, Business, User, Review, Classification
 
@@ -17,6 +17,7 @@ from backend.db.models import Organization, Business, User, Review, Classificati
 class TestDatabaseModels:
     """Test database models and relationships."""
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_organization_creation(self, test_db_session: AsyncSession):
         """Test creating an organization."""
@@ -35,6 +36,7 @@ class TestDatabaseModels:
         assert org.subscription_tier == "premium"
         assert org.cost_limit_monthly == 200.00
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_business_creation(
         self, test_db_session: AsyncSession, test_organization: Organization
@@ -57,6 +59,7 @@ class TestDatabaseModels:
         assert business.google_place_id == "test-place-123"
         assert business.organization_id == test_organization.id
 
+    @pytest.mark.asyncio
     async def test_user_creation(
         self, test_db_session: AsyncSession, test_organization: Organization
     ):
@@ -79,6 +82,7 @@ class TestDatabaseModels:
         assert user.role == "admin"
         assert user.organization_id == test_organization.id
 
+    @pytest.mark.asyncio
     async def test_review_creation(
         self, test_db_session: AsyncSession, test_business: Business
     ):
@@ -91,7 +95,7 @@ class TestDatabaseModels:
             rating=5,
             text="Great food and service!",
             language="en",
-            published_at=datetime.utcnow(),
+            published_at=datetime.now(timezone.utc),
             source="google",
             external_id="review-123",
         )
@@ -105,6 +109,7 @@ class TestDatabaseModels:
         assert review.rating == 5
         assert review.text == "Great food and service!"
 
+    @pytest.mark.asyncio
     async def test_classification_creation(
         self, test_db_session: AsyncSession, test_reviews: list
     ):
@@ -132,6 +137,7 @@ class TestDatabaseModels:
         assert classification.topics == ["food_quality", "service"]
         assert float(classification.confidence_score) == 0.95
 
+    @pytest.mark.asyncio
     async def test_business_organization_relationship(
         self, test_db_session: AsyncSession, test_business: Business
     ):
@@ -150,6 +156,7 @@ class TestDatabaseModels:
         assert business.organization is not None
         assert business.organization.name == "Test Restaurant Group"
 
+    @pytest.mark.asyncio
     async def test_review_business_relationship(
         self, test_db_session: AsyncSession, test_reviews: list
     ):
@@ -169,6 +176,7 @@ class TestDatabaseModels:
         assert loaded_review.business is not None
         assert loaded_review.business.name == "Test Restaurant"
 
+    @pytest.mark.asyncio
     async def test_unique_constraints(
         self, test_db_session: AsyncSession, test_business: Business
     ):
@@ -179,7 +187,7 @@ class TestDatabaseModels:
         review1 = Review(
             business_id=test_business.id,
             text="First review",
-            published_at=datetime.utcnow(),
+            published_at=datetime.now(timezone.utc),
             source="google",
             external_id="duplicate-id",
         )
@@ -187,7 +195,7 @@ class TestDatabaseModels:
         review2 = Review(
             business_id=test_business.id,
             text="Second review",
-            published_at=datetime.utcnow(),
+            published_at=datetime.now(timezone.utc),
             source="google",
             external_id="duplicate-id",
         )
@@ -204,6 +212,7 @@ class TestDatabaseModels:
 class TestDatabaseConnection:
     """Test database connection and session management."""
 
+    @pytest.mark.asyncio
     async def test_database_initialization(self):
         """Test database initialization."""
         from backend.db.database import init_database
@@ -211,6 +220,7 @@ class TestDatabaseConnection:
         # This should not raise any exceptions
         await init_database()
 
+    @pytest.mark.asyncio
     async def test_session_creation(self):
         """Test database session creation."""
         from backend.db.database import get_db_session
@@ -223,6 +233,7 @@ class TestDatabaseConnection:
 
         assert session_created
 
+    @pytest.mark.asyncio
     async def test_session_rollback_on_error(self, test_db_session: AsyncSession):
         """Test that sessions rollback properly on errors."""
         # Create an invalid operation that will cause an error

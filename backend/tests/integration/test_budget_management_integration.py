@@ -31,6 +31,7 @@ class TestBudgetManagementIntegration:
         alert_service = AlertService(None, None, None)  # Mock for testing
         return BudgetManagementService(cost_tracker, alert_service, test_db_session)
 
+    @pytest.mark.asyncio
     async def test_complete_budget_tracking_workflow(
         self, 
         test_db_session: AsyncSession, 
@@ -75,6 +76,7 @@ class TestBudgetManagementIntegration:
         is_allowed = await cost_tracker.validate_operation(business_id, "classify")
         assert is_allowed is True
 
+    @pytest.mark.asyncio
     async def test_budget_warning_threshold_detection(
         self, 
         test_db_session: AsyncSession, 
@@ -105,6 +107,7 @@ class TestBudgetManagementIntegration:
         
         assert exc_info.value.usage_percentage == 80.0
 
+    @pytest.mark.asyncio
     async def test_cost_limit_exceeded_and_operation_disabling(
         self, 
         test_db_session: AsyncSession, 
@@ -145,6 +148,7 @@ class TestBudgetManagementIntegration:
         is_classify_allowed = await cost_tracker.validate_operation(business_id, "classify")
         assert is_classify_allowed is False
 
+    @pytest.mark.asyncio
     async def test_cost_breakdown_by_period(
         self, 
         db_session: AsyncSession, 
@@ -206,6 +210,7 @@ class TestBudgetManagementIntegration:
         claude_service = breakdown["services"]["claude_haiku"]
         assert claude_service["total_cost"] == Decimal("7.50")  # 3.00 + 4.50
 
+    @pytest.mark.asyncio
     async def test_projected_monthly_cost_calculation(
         self, 
         db_session: AsyncSession, 
@@ -233,6 +238,7 @@ class TestBudgetManagementIntegration:
         assert projected_cost > Decimal("30.00")  # Should be higher than current
         assert projected_cost < Decimal("300.00")  # Should be reasonable
 
+    @pytest.mark.asyncio
     async def test_budget_service_comprehensive_status(
         self, 
         db_session: AsyncSession, 
@@ -267,6 +273,7 @@ class TestBudgetManagementIntegration:
         assert "recommendations" in status
         assert "days_remaining" in status
 
+    @pytest.mark.asyncio
     async def test_cost_limit_update_functionality(
         self, 
         db_session: AsyncSession, 
@@ -285,6 +292,7 @@ class TestBudgetManagementIntegration:
         budget_status = await budget_service._cost_tracker.check_budget_status(business_id)
         assert budget_status["cost_limit"] == new_limit
 
+    @pytest.mark.asyncio
     async def test_historical_cost_trends(
         self, 
         db_session: AsyncSession, 
@@ -319,6 +327,7 @@ class TestBudgetManagementIntegration:
         assert trends[0]["classification_cost"] == Decimal("50.00")
         assert trends[0]["usage_percentage"] == Decimal("60.00")
 
+    @pytest.mark.asyncio
     async def test_budget_enforcement_workflow(
         self, 
         db_session: AsyncSession, 

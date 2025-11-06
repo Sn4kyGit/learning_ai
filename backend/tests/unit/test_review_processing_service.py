@@ -9,7 +9,7 @@ import pytest
 from decimal import Decimal
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from backend.services.review.processor import ReviewProcessingService, ProcessingResult
 from backend.ai.base import ReviewText, ClassificationResult
@@ -49,7 +49,7 @@ class MockReviewRepository:
         review.language = language
         review.author_name = "Test Author"
         review.rating = 4
-        review.published_at = datetime.utcnow()
+        review.published_at = datetime.now(timezone.utc)
         
         self.reviews[review_id] = review
         self.unprocessed_reviews.append(review)
@@ -75,7 +75,7 @@ class MockClassificationRepository:
             
         for key, value in data.items():
             setattr(classification, key, value)
-        classification.created_at = datetime.utcnow()
+        classification.created_at = datetime.now(timezone.utc)
         
         self.classifications.append(classification)
         return classification
@@ -121,6 +121,7 @@ class TestReviewProcessingService:
         # Test data
         self.business_id = uuid4()
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_process_new_reviews_success(self):
         """Test successful processing of new reviews."""
@@ -184,6 +185,7 @@ class TestReviewProcessingService:
         assert call_args[1].text == "Terrible experience"
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_process_new_reviews_no_unprocessed(self):
         """Test processing when no unprocessed reviews exist."""
         # Arrange - no unprocessed reviews
@@ -201,6 +203,7 @@ class TestReviewProcessingService:
         # Verify classifier was not called
         self.classifier.classify_batch.assert_not_called()
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_process_new_reviews_language_detection(self):
         """Test language detection and review update."""
@@ -237,6 +240,7 @@ class TestReviewProcessingService:
         # In real implementation, review.language would be updated to "de"
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_process_new_reviews_competitor_mentions(self):
         """Test handling of competitor mentions."""
         # Arrange
@@ -269,6 +273,7 @@ class TestReviewProcessingService:
         assert self.alert_service.competitor_alerts[0][0] == review
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_process_new_reviews_classification_failure(self):
         """Test handling of classification failures."""
         # Arrange
@@ -291,6 +296,7 @@ class TestReviewProcessingService:
         assert len(result.errors) == 1
         assert "Classification failed" in result.errors[0]
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_process_single_review_success(self):
         """Test successful processing of a single review."""
@@ -329,6 +335,7 @@ class TestReviewProcessingService:
         self.classifier.classify_review.assert_called_once_with("Good food", "en")
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_process_single_review_not_found(self):
         """Test processing single review when review doesn't exist."""
         # Arrange
@@ -343,6 +350,7 @@ class TestReviewProcessingService:
         # Verify no classification was created
         assert len(self.classification_repo.classifications) == 0
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_process_single_review_critical_alert(self):
         """Test single review processing triggers critical alert."""
@@ -376,6 +384,7 @@ class TestReviewProcessingService:
         assert len(self.alert_service.critical_alerts) == 1
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_process_single_review_classification_error(self):
         """Test single review processing with classification error."""
         # Arrange
@@ -398,6 +407,7 @@ class TestReviewProcessingService:
         # Verify no classification was created
         assert len(self.classification_repo.classifications) == 0
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_batch_processing_performance(self):
         """Test batch processing handles multiple reviews efficiently."""
@@ -444,6 +454,7 @@ class TestReviewProcessingService:
         expected_critical_count = len([r for r in classification_results if r.urgency == "high"])
         assert len(self.alert_service.critical_alerts) == expected_critical_count
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_mixed_language_processing(self):
         """Test processing reviews in different languages."""

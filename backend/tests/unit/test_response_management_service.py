@@ -7,7 +7,7 @@ and priority queue functionality.
 
 import pytest
 from decimal import Decimal
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, Mock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -55,7 +55,7 @@ class TestResponseManagementService:
             rating=2,
             text="The food was cold and service was slow.",
             language="en",
-            published_at=datetime.utcnow() - timedelta(days=1),
+            published_at=datetime.now(timezone.utc) - timedelta(days=1),
             source="google",
             external_id="review-123"
         )
@@ -82,6 +82,7 @@ class TestResponseManagementService:
             total_reviews=50
         )
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_generate_response_template_success(self):
         """Test successful response template generation."""
@@ -133,6 +134,7 @@ class TestResponseManagementService:
         assert call_args[1]["language"] == language
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_generate_response_template_with_tone_preference(self):
         """Test response template generation with specific tone preference."""
         # Arrange
@@ -172,6 +174,7 @@ class TestResponseManagementService:
         assert "professional tone" in call_args[1]["message"].lower()
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_generate_response_template_review_not_found(self):
         """Test response template generation when review is not found."""
         # Arrange
@@ -186,6 +189,7 @@ class TestResponseManagementService:
                 business_id=self.test_business_id
             )
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_analyze_response_tone_empathetic(self):
         """Test tone analysis for empathetic response."""
@@ -203,6 +207,7 @@ class TestResponseManagementService:
         assert result.tone_confidence > 0.0
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_analyze_response_tone_professional(self):
         """Test tone analysis for professional response."""
         # Arrange
@@ -216,6 +221,7 @@ class TestResponseManagementService:
         assert result.primary_tone == ResponseTone.PROFESSIONAL
         assert result.professionalism_score > 0.7
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_analyze_response_tone_defensive(self):
         """Test tone analysis for defensive response."""
@@ -232,6 +238,7 @@ class TestResponseManagementService:
         assert any("defensive" in issue.lower() for issue in result.issues)
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_analyze_response_tone_with_suggestions(self):
         """Test tone analysis provides helpful suggestions."""
         # Arrange
@@ -246,6 +253,7 @@ class TestResponseManagementService:
         assert any("thank" in suggestion.lower() for suggestion in result.suggestions)
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_get_response_queue_prioritized_order(self):
         """Test response queue returns items in correct priority order."""
         # Arrange
@@ -258,7 +266,7 @@ class TestResponseManagementService:
                     business_id=self.test_business_id,
                     rating=1,
                     text="Terrible experience",
-                    published_at=datetime.utcnow() - timedelta(days=2)
+                    published_at=datetime.now(timezone.utc) - timedelta(days=2)
                 ),
                 Classification(
                     review_id="review-1",
@@ -274,7 +282,7 @@ class TestResponseManagementService:
                     business_id=self.test_business_id,
                     rating=3,
                     text="Average experience",
-                    published_at=datetime.utcnow() - timedelta(days=1)
+                    published_at=datetime.now(timezone.utc) - timedelta(days=1)
                 ),
                 Classification(
                     review_id="review-2",
@@ -290,7 +298,7 @@ class TestResponseManagementService:
                     business_id=self.test_business_id,
                     rating=5,
                     text="Great experience",
-                    published_at=datetime.utcnow()
+                    published_at=datetime.now(timezone.utc)
                 ),
                 Classification(
                     review_id="review-3",
@@ -322,6 +330,7 @@ class TestResponseManagementService:
         assert result[1].urgency_score >= result[2].urgency_score
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_get_response_queue_with_priority_filter(self):
         """Test response queue with priority filter."""
         # Arrange
@@ -331,7 +340,7 @@ class TestResponseManagementService:
                     id="review-1", 
                     business_id=self.test_business_id, 
                     rating=1,
-                    published_at=datetime.utcnow() - timedelta(days=1)
+                    published_at=datetime.now(timezone.utc) - timedelta(days=1)
                 ),
                 Classification(review_id="review-1", sentiment="negative", urgency="high", topics=["service"])
             ),
@@ -340,7 +349,7 @@ class TestResponseManagementService:
                     id="review-2", 
                     business_id=self.test_business_id, 
                     rating=4,
-                    published_at=datetime.utcnow() - timedelta(days=2)
+                    published_at=datetime.now(timezone.utc) - timedelta(days=2)
                 ),
                 Classification(review_id="review-2", sentiment="positive", urgency="low", topics=["food_quality"])
             )
@@ -360,6 +369,7 @@ class TestResponseManagementService:
         assert len(result) == 1  # Only urgent priority should be returned
         assert result[0].priority == ResponsePriority.URGENT
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_track_response_metrics_calculation(self):
         """Test response metrics calculation."""
@@ -404,6 +414,7 @@ class TestResponseManagementService:
         assert result.responses_by_sentiment["positive"] == 40
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_track_response_metrics_zero_reviews(self):
         """Test response metrics when no reviews exist."""
         # Arrange
@@ -431,6 +442,7 @@ class TestResponseManagementService:
         assert result.avg_response_time_hours == 0.0
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_save_response_success(self):
         """Test successful response saving."""
         # Arrange
@@ -454,6 +466,7 @@ class TestResponseManagementService:
         assert result.startswith("response-")
         assert self.test_review_id in result
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_save_response_review_not_found(self):
         """Test response saving when review doesn't exist."""

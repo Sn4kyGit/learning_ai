@@ -1,0 +1,95 @@
+{
+  "report_info": {
+    "generated_at": "2025-11-06T15:54:35.903521",
+    "collection_timestamp": "2025-11-06T15:54:35.528763",
+    "workspace": "/Users/ronnystosser/learning_ai"
+  },
+  "summary": {
+    "total_files": 3,
+    "total_size_bytes": 5888,
+    "categories": {
+      "test_results": {
+        "file_count": 0,
+        "total_size_bytes": 0
+      },
+      "coverage_reports": {
+        "file_count": 2,
+        "total_size_bytes": 3972
+      },
+      "performance_data": {
+        "file_count": 1,
+        "total_size_bytes": 1916
+      },
+      "quality_reports": {
+        "file_count": 0,
+        "total_size_bytes": 0
+      },
+      "security_scans": {
+        "file_count": 0,
+        "total_size_bytes": 0
+      },
+      "logs": {
+        "file_count": 0,
+        "total_size_bytes": 0
+      },
+      "screenshots": {
+        "file_count": 0,
+        "total_size_bytes": 0
+      },
+      "videos": {
+        "file_count": 0,
+        "total_size_bytes": 0
+      }
+    }
+  },
+  "analysis": {
+    "test_results": {
+      "total_test_files": 0,
+      "test_suites": [],
+      "overall_stats": {
+        "total_tests": 0,
+        "passed_tests": 0,
+        "failed_tests": 0,
+        "skipped_tests": 0,
+        "success_rate": 0
+      }
+    },
+    "coverage_analysis": {
+      "coverage_files": 2,
+      "coverage_data": []
+    },
+    "performance_analysis": {
+      "performance_files": 1,
+      "benchmarks": [],
+      "regressions_detected": false
+    },
+    "quality_analysis": {
+      "quality_files": 0,
+      "linting_issues": 0,
+      "type_errors": 0,
+      "format_issues": 0
+    },
+    "security_analysis": {
+      "security_files": 0,
+      "vulnerabilities": 0,
+      "severity_breakdown": {
+        "critical": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0
+      }
+    }
+  },
+  "recommendations": [
+    {
+      "category": "testing",
+      "priority": "high",
+      "message": "Test success rate is 0.0%. Consider investigating failing tests."
+    },
+    {
+      "category": "coverage",
+      "priority": "medium",
+      "message": "Code coverage is 0.0%. Consider adding more tests."
+    }
+  ]
+}

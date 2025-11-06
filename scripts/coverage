@@ -1,0 +1,102 @@
+#!/bin/bash
+# Coverage analysis wrapper script
+# Usage: ./scripts/coverage [command] [options]
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Change to project root
+cd "$PROJECT_ROOT"
+
+# Default command
+COMMAND="${1:-suite}"
+
+case "$COMMAND" in
+    "analyze"|"analysis")
+        echo "🔍 Running coverage analysis..."
+        python scripts/coverage_analysis.py "${@:2}"
+        ;;
+    
+    "gaps"|"gap-analysis")
+        echo "🔍 Running coverage gap analysis..."
+        python scripts/coverage_gap_analysis.py "${@:2}"
+        ;;
+    
+    "critical"|"critical-paths")
+        echo "🎯 Running critical path validation..."
+        python scripts/critical_path_validator.py "${@:2}"
+        ;;
+    
+    "ci"|"ci-integration")
+        echo "🔧 Running CI integration..."
+        python scripts/coverage_ci_integration.py "${@:2}"
+        ;;
+    
+    "suite"|"comprehensive")
+        echo "🚀 Running comprehensive coverage suite..."
+        python scripts/run_coverage_suite.py "${@:2}"
+        ;;
+    
+    "quick")
+        echo "⚡ Running quick coverage check..."
+        python scripts/coverage_analysis.py --fail-under 70 "${@:2}"
+        ;;
+    
+    "report")
+        echo "📊 Generating coverage report..."
+        if [ -f "coverage.json" ]; then
+            python -c "
+import json
+with open('coverage.json', 'r') as f:
+    data = json.load(f)
+    print(f'Overall Coverage: {data.get(\"totals\", {}).get(\"percent_covered\", 0):.1f}%')
+"
+        else
+            echo "No coverage data found. Run 'coverage analyze' first."
+        fi
+        ;;
+    
+    "clean")
+        echo "🧹 Cleaning coverage data..."
+        rm -f .coverage coverage.xml coverage.json
+        rm -rf htmlcov/
+        rm -f coverage-*.json *.md
+        echo "Coverage data cleaned."
+        ;;
+    
+    "help"|"-h"|"--help")
+        cat << EOF
+Coverage Analysis Tool
+
+Usage: $0 [command] [options]
+
+Commands:
+  analyze, analysis     Run basic coverage analysis
+  gaps, gap-analysis    Run coverage gap analysis  
+  critical, critical-paths  Run critical path validation
+  ci, ci-integration    Run CI integration
+  suite, comprehensive  Run comprehensive coverage suite (default)
+  quick                 Run quick coverage check (70% threshold)
+  report               Show coverage summary
+  clean                Clean coverage data files
+  help                 Show this help message
+
+Examples:
+  $0                    # Run comprehensive suite
+  $0 analyze --verbose  # Run analysis with verbose output
+  $0 critical --fail-on-gaps  # Validate critical paths
+  $0 ci --environment production  # Run CI integration
+  $0 clean              # Clean coverage files
+
+For detailed options, run: $0 [command] --help
+EOF
+        ;;
+    
+    *)
+        echo "❌ Unknown command: $COMMAND"
+        echo "Run '$0 help' for usage information."
+        exit 1
+        ;;
+esac

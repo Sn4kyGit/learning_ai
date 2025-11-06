@@ -7,7 +7,7 @@ including CRUD operations and classification analysis queries.
 
 from typing import List, Optional, Dict, Any
 from uuid import UUID
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -179,7 +179,7 @@ class ClassificationRepository(BaseRepository[Classification, ClassificationCrea
             List of classifications with competitor mentions
         """
         try:
-            cutoff_date = datetime.utcnow() - timedelta(days=days)
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
             
             result = await self.session.execute(
                 select(Classification)

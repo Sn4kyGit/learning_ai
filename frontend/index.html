@@ -5,6 +5,13 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Local Business Intelligence Bot</title>
+    <!-- Google Places API -->
+    <script>
+      window.initGooglePlaces = function() {
+        window.googlePlacesLoaded = true;
+        window.dispatchEvent(new Event('google-places-loaded'));
+      }
+    </script>
   </head>
   <body>
     <div id="app"></div>

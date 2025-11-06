@@ -36,6 +36,7 @@ class TestBudgetManagementService:
             db_session=self.mock_db
         )
 
+    @pytest.mark.asyncio
     async def test_init_creates_service_with_dependencies(self):
         """Test service initialization with dependencies."""
         # Act
@@ -50,6 +51,7 @@ class TestBudgetManagementService:
         assert service._alert_service == self.mock_alert_service
         assert service._db == self.mock_db
 
+    @pytest.mark.asyncio
     async def test_check_and_enforce_budget_allows_operation_within_budget(self):
         """Test budget enforcement allows operations within budget."""
         # Arrange
@@ -65,6 +67,7 @@ class TestBudgetManagementService:
         assert result is True
         self.mock_cost_tracker.validate_operation.assert_called_once_with(business_id, operation)
 
+    @pytest.mark.asyncio
     async def test_check_and_enforce_budget_blocks_disabled_operation(self):
         """Test budget enforcement blocks disabled operations."""
         # Arrange
@@ -79,6 +82,7 @@ class TestBudgetManagementService:
         # Assert
         assert result is False
 
+    @pytest.mark.asyncio
     async def test_check_and_enforce_budget_handles_warning_exception(self):
         """Test budget enforcement handles warning exception."""
         # Arrange
@@ -96,6 +100,7 @@ class TestBudgetManagementService:
             assert result is True  # Operation allowed despite warning
             mock_send_warning.assert_called_once_with(business_id, 85.0)
 
+    @pytest.mark.asyncio
     async def test_check_and_enforce_budget_handles_limit_exceeded_exception(self):
         """Test budget enforcement handles limit exceeded exception."""
         # Arrange
@@ -121,6 +126,7 @@ class TestBudgetManagementService:
                 Decimal("100.00")
             )
 
+    @pytest.mark.asyncio
     async def test_get_comprehensive_budget_status_returns_detailed_info(self):
         """Test comprehensive budget status returns all required information."""
         # Arrange
@@ -159,6 +165,7 @@ class TestBudgetManagementService:
                 assert result["days_remaining"] == 15
                 assert result["is_projected_over_budget"] is False
 
+    @pytest.mark.asyncio
     async def test_get_comprehensive_budget_status_detects_projected_over_budget(self):
         """Test comprehensive budget status detects projected over-budget."""
         # Arrange
@@ -188,6 +195,7 @@ class TestBudgetManagementService:
                 # Assert
                 assert result["is_projected_over_budget"] is True
 
+    @pytest.mark.asyncio
     async def test_update_cost_limit_updates_organization_limit(self):
         """Test updating cost limit updates organization."""
         # Arrange
@@ -216,6 +224,7 @@ class TestBudgetManagementService:
         self.mock_db.commit.assert_called_once()
         self.mock_cost_tracker.enable_all_operations.assert_called_once_with(business_id)
 
+    @pytest.mark.asyncio
     async def test_update_cost_limit_handles_missing_business(self):
         """Test updating cost limit handles missing business."""
         # Arrange
@@ -232,6 +241,7 @@ class TestBudgetManagementService:
         # Assert
         assert result is False
 
+    @pytest.mark.asyncio
     async def test_get_historical_cost_trends_returns_monthly_summaries(self):
         """Test getting historical cost trends."""
         # Arrange
@@ -271,6 +281,7 @@ class TestBudgetManagementService:
         assert result[1]["month"] == date(2024, 2, 1)
         assert result[1]["total_cost"] == Decimal("92.00")
 
+    @pytest.mark.asyncio
     async def test_generate_budget_recommendations_suggests_limit_increase(self):
         """Test budget recommendations suggest limit increase when projected over budget."""
         # Arrange
@@ -292,6 +303,7 @@ class TestBudgetManagementService:
         assert "exceeds limit" in result[0]
         assert "increasing your budget" in result[0]
 
+    @pytest.mark.asyncio
     async def test_generate_budget_recommendations_warns_at_90_percent(self):
         """Test budget recommendations warn at 90% usage."""
         # Arrange
@@ -311,6 +323,7 @@ class TestBudgetManagementService:
         # Assert
         assert any("approaching your monthly budget limit" in rec for rec in result)
 
+    @pytest.mark.asyncio
     async def test_generate_budget_recommendations_suggests_optimization(self):
         """Test budget recommendations suggest optimization at 70% usage."""
         # Arrange
@@ -330,6 +343,7 @@ class TestBudgetManagementService:
         # Assert
         assert any("reviewing your AI usage patterns" in rec for rec in result)
 
+    @pytest.mark.asyncio
     async def test_generate_budget_recommendations_mentions_disabled_operations(self):
         """Test budget recommendations mention disabled operations."""
         # Arrange

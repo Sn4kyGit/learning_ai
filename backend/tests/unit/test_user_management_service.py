@@ -17,6 +17,7 @@ class TestUserManagementService:
     """Test suite for UserManagementService."""
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_grant_business_access_success(self, test_db_session, test_organization):
         """Test successful business access granting."""
         # Arrange
@@ -65,6 +66,7 @@ class TestUserManagementService:
         assert access.granted_by == granter.id
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_grant_business_access_user_not_found(self, test_db_session):
         """Test granting access to non-existent user."""
         # Arrange
@@ -85,6 +87,7 @@ class TestUserManagementService:
         assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
         assert "User not found" in str(exc_info.value.detail)
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_grant_business_access_business_not_found(self, test_db_session):
         """Test granting access to non-existent business."""
@@ -116,6 +119,7 @@ class TestUserManagementService:
         assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
         assert "Business not found" in str(exc_info.value.detail)
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_grant_business_access_invalid_permission(self, test_db_session, test_organization):
         """Test granting access with invalid permission level."""
@@ -152,6 +156,7 @@ class TestUserManagementService:
         assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
         assert "Invalid permission level" in str(exc_info.value.detail)
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_grant_business_access_already_exists(self, test_db_session, test_organization):
         """Test granting access when access already exists."""
@@ -207,6 +212,7 @@ class TestUserManagementService:
         assert "already has access" in str(exc_info.value.detail)
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_revoke_business_access_success(self, test_db_session, test_organization):
         """Test successful business access revocation."""
         # Arrange
@@ -247,6 +253,7 @@ class TestUserManagementService:
         assert result is True
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_revoke_business_access_not_found(self, test_db_session):
         """Test revoking non-existent business access."""
         # Arrange
@@ -260,6 +267,7 @@ class TestUserManagementService:
         # Assert
         assert result is False
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_update_business_access_success(self, test_db_session, test_organization):
         """Test successful business access update."""
@@ -305,6 +313,7 @@ class TestUserManagementService:
         assert updated_access.permission_level == "full_access"
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_update_business_access_not_found(self, test_db_session):
         """Test updating non-existent business access."""
         # Arrange
@@ -323,6 +332,7 @@ class TestUserManagementService:
         assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
         assert "access record not found" in str(exc_info.value.detail)
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_get_business_users(self, test_db_session, test_organization):
         """Test getting users with access to a business."""
@@ -384,6 +394,7 @@ class TestUserManagementService:
         assert "user2@example.com" in user_emails
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_get_user_businesses_super_admin(self, test_db_session, test_organization):
         """Test getting businesses for super admin user."""
         # Arrange
@@ -426,6 +437,7 @@ class TestUserManagementService:
         for biz_data in businesses:
             assert biz_data["permission_level"] == "full_access"
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_get_user_businesses_regular_user(self, test_db_session, test_organization):
         """Test getting businesses for regular user with explicit access."""
@@ -477,6 +489,7 @@ class TestUserManagementService:
         assert businesses[0]["business"]["name"] == "Restaurant One"
         assert businesses[0]["permission_level"] == "read_only"
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_get_organization_users(self, test_db_session, test_organization):
         """Test getting all users in an organization."""

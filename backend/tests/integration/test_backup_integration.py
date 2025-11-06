@@ -12,6 +12,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 import pytest
+import pytest_asyncio
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,7 +21,6 @@ from backend.db.database import get_db_session_context
 from backend.db.models import Business, Review, User, Organization
 from backend.services.backup_service import BackupService, BackupConfig, BackupType
 from backend.services.backup_config import get_backup_config
-from backend.tests.conftest import test_user, test_business, test_organization
 
 
 class TestBackupIntegration:
@@ -33,48 +33,48 @@ class TestBackupIntegration:
         yield temp_dir
         shutil.rmtree(temp_dir, ignore_errors=True)
 
-    @pytest.fixture
-    async def backup_service_with_data(self, temp_backup_dir, test_db):
+    @pytest_asyncio.fixture
+    async def backup_service_with_data(self, temp_backup_dir, test_db_session):
         """Create backup service with test data in database."""
         # Create test data
-        async with get_db_session_context() as session:
-            # Create organization
-            org = Organization(
-                name="Test Restaurant Group",
-                subscription_tier="premium",
-                cost_limit_monthly=500.00
+        session = test_db_session
+        # Create organization
+        org = Organization(
+            name="Test Restaurant Group",
+            subscription_tier="premium",
+            cost_limit_monthly=500.00
+        )
+        session.add(org)
+        await session.flush()
+        
+        # Create business
+        business = Business(
+            organization_id=org.id,
+            name="Test Restaurant",
+            google_place_id="test_place_123",
+            category="restaurant",
+            address="123 Test St",
+            avg_rating=4.5,
+            total_reviews=10
+        )
+        session.add(business)
+        await session.flush()
+        
+        # Create reviews
+        for i in range(5):
+            review = Review(
+                business_id=business.id,
+                author_name=f"Customer {i}",
+                rating=4 + (i % 2),
+                text=f"Great food and service! Review {i}",
+                language="en",
+                published_at=datetime.now(),
+                source="google",
+                external_id=f"review_{i}"
             )
-            session.add(org)
-            await session.flush()
-            
-            # Create business
-            business = Business(
-                organization_id=org.id,
-                name="Test Restaurant",
-                google_place_id="test_place_123",
-                category="restaurant",
-                address="123 Test St",
-                avg_rating=4.5,
-                total_reviews=10
-            )
-            session.add(business)
-            await session.flush()
-            
-            # Create reviews
-            for i in range(5):
-                review = Review(
-                    business_id=business.id,
-                    author_name=f"Customer {i}",
-                    rating=4 + (i % 2),
-                    text=f"Great food and service! Review {i}",
-                    language="en",
-                    published_at=datetime.now(),
-                    source="google",
-                    external_id=f"review_{i}"
-                )
-                session.add(review)
-            
-            await session.commit()
+            session.add(review)
+        
+        await session.commit()
         
         # Create backup service
         from cryptography.fernet import Fernet
@@ -92,6 +92,7 @@ class TestBackupIntegration:
         
         return BackupService(config)
 
+    @pytest.mark.asyncio
     async def test_complete_backup_workflow(self, backup_service_with_data):
         """Test complete backup creation workflow with real data."""
         service = backup_service_with_data
@@ -115,6 +116,7 @@ class TestBackupIntegration:
         assert status["total_backups"] == 1
         assert status["encryption_enabled"] is True
 
+    @pytest.mark.asyncio
     async def test_backup_and_restore_workflow(self, backup_service_with_data, test_db):
         """Test complete backup and restore workflow."""
         service = backup_service_with_data
@@ -161,6 +163,7 @@ class TestBackupIntegration:
         # For SQLite, the file would be replaced entirely
         # For PostgreSQL, SQL statements would be executed
 
+    @pytest.mark.asyncio
     async def test_backup_retention_policy(self, backup_service_with_data):
         """Test backup retention policy enforcement."""
         service = backup_service_with_data
@@ -213,6 +216,7 @@ class TestBackupIntegration:
         assert not os.path.exists(old_backup.file_path)
         assert os.path.exists(recent_backup.file_path)
 
+    @pytest.mark.asyncio
     async def test_backup_failure_recovery(self, backup_service_with_data):
         """Test backup failure handling and recovery."""
         service = backup_service_with_data
@@ -231,6 +235,7 @@ class TestBackupIntegration:
         metadata = await service.create_daily_backup()
         assert metadata.status.value == "completed"
 
+    @pytest.mark.asyncio
     async def test_concurrent_backup_operations(self, backup_service_with_data):
         """Test handling of concurrent backup operations."""
         service = backup_service_with_data
@@ -393,6 +398,7 @@ class TestBackupConfiguration:
 class TestBackupScheduler:
     """Integration tests for backup scheduler."""
 
+    @pytest.mark.asyncio
     async def test_scheduler_integration(self, backup_service_with_data):
         """Test backup scheduler integration with backup service."""
         from backend.services.backup_service import BackupScheduler
@@ -411,6 +417,7 @@ class TestBackupScheduler:
         await scheduler.stop()
         assert scheduler._running is False
 
+    @pytest.mark.asyncio
     async def test_scheduler_error_handling(self, backup_service_with_data):
         """Test scheduler error handling in integration environment."""
         from backend.services.backup_service import BackupScheduler
@@ -436,6 +443,7 @@ class TestBackupScheduler:
 class TestBackupPerformance:
     """Performance tests for backup operations."""
 
+    @pytest.mark.asyncio
     async def test_backup_performance_with_large_dataset(self, backup_service_with_data, test_db):
         """Test backup performance with larger dataset."""
         service = backup_service_with_data
@@ -488,6 +496,7 @@ class TestBackupPerformance:
         # Verify compression ratio is reasonable
         assert metadata.compression_ratio < 1.0  # Should be compressed
 
+    @pytest.mark.asyncio
     async def test_concurrent_backup_performance(self, backup_service_with_data):
         """Test performance of concurrent backup operations."""
         service = backup_service_with_data

@@ -266,7 +266,7 @@ class BusinessRepository(BaseRepository[Business, BusinessCreate, BusinessUpdate
             
             # Get recent review count (last 30 days)
             from datetime import datetime, timedelta
-            thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+            thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
             
             recent_reviews_result = await self.session.execute(
                 select(func.count(Review.id))

@@ -92,6 +92,12 @@ const routes: RouteRecordRaw[] = [
         name: 'Profile',
         component: () => import('@/views/profile/ProfileView.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'businesses',
+        name: 'Businesses',
+        component: () => import('@/views/businesses/BusinessManagementView.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   },
@@ -123,6 +129,10 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/profile',
     redirect: '/app/profile'
+  },
+  {
+    path: '/businesses',
+    redirect: '/app/businesses'
   }
 ]
 

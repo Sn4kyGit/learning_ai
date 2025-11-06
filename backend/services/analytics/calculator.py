@@ -8,7 +8,7 @@ and business performance indicators.
 import logging
 from typing import Dict, List, Any, Optional
 from uuid import UUID
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 from decimal import Decimal
 from dataclasses import dataclass
 
@@ -125,7 +125,7 @@ class AnalyticsCalculator:
                 ),  # TODO: Implement response rate calculation
                 avg_response_time_hours=None,  # TODO: Implement response time calculation
                 trend_data=trend_data,
-                last_updated=datetime.utcnow(),
+                last_updated=datetime.now(timezone.utc),
             )
 
         except Exception as e:
@@ -143,7 +143,7 @@ class AnalyticsCalculator:
                 response_rate=Decimal("0.0"),
                 avg_response_time_hours=None,
                 trend_data=[],
-                last_updated=datetime.utcnow(),
+                last_updated=datetime.now(timezone.utc),
             )
 
     async def calculate_trends(

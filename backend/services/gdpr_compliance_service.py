@@ -8,7 +8,7 @@ notification as required by Requirement 12.
 
 from typing import List, Optional, Dict, Any
 from uuid import UUID
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 import json
 from enum import Enum
@@ -101,7 +101,7 @@ class GDPRComplianceService:
             "granted": granted,
             "purpose": purpose,
             "legal_basis": legal_basis,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "ip_address": ip_address,
             "user_agent": user_agent,
         }
@@ -130,7 +130,7 @@ class GDPRComplianceService:
                 "consent_type": ConsentType.DATA_PROCESSING.value,
                 "granted": True,
                 "purpose": "Business intelligence and review analysis",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "legal_basis": "consent"
             }
         ]
@@ -165,7 +165,7 @@ class GDPRComplianceService:
                 detail="User not found"
             )
 
-        request_id = f"dsr_{user_id}_{int(datetime.utcnow().timestamp())}"
+        request_id = f"dsr_{user_id}_{int(datetime.now(timezone.utc).timestamp())}"
         
         if request_type == DataSubjectRightType.ACCESS:
             return await self._process_access_request(user_id, request_id)
@@ -181,7 +181,7 @@ class GDPRComplianceService:
                 "request_type": request_type.value,
                 "status": "acknowledged",
                 "message": f"Your {request_type.value} request has been received and will be processed within 30 days.",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     async def _process_access_request(
@@ -266,7 +266,7 @@ class GDPRComplianceService:
                 }
                 for resp in responses
             ],
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
         }
 
         logger.info(f"Data access request processed for user {user_id}")
@@ -342,7 +342,7 @@ class GDPRComplianceService:
                 "status": "completed",
                 "deleted_records": deleted_records,
                 "message": "Your data has been successfully deleted from our systems.",
-                "completed_at": datetime.utcnow().isoformat(),
+                "completed_at": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -375,7 +375,7 @@ class GDPRComplianceService:
             "export_format": "json",
             "data": access_data,
             "metadata": {
-                "exported_at": datetime.utcnow().isoformat(),
+                "exported_at": datetime.now(timezone.utc).isoformat(),
                 "format_version": "1.0",
                 "total_records": (
                     len(access_data.get("conversations", [])) +
@@ -414,7 +414,7 @@ class GDPRComplianceService:
         Returns:
             Dict containing breach record details
         """
-        breach_id = f"breach_{int(datetime.utcnow().timestamp())}"
+        breach_id = f"breach_{int(datetime.now(timezone.utc).timestamp())}"
         
         breach_record = {
             "breach_id": breach_id,
@@ -426,7 +426,7 @@ class GDPRComplianceService:
             "contained_at": contained_at.isoformat() if contained_at else None,
             "root_cause": root_cause,
             "mitigation_steps": mitigation_steps or [],
-            "logged_at": datetime.utcnow().isoformat(),
+            "logged_at": datetime.now(timezone.utc).isoformat(),
             "notification_required": severity in [DataBreachSeverity.HIGH, DataBreachSeverity.CRITICAL],
             "authority_notification_deadline": (
                 discovered_at + timedelta(hours=72)
@@ -538,7 +538,7 @@ class GDPRComplianceService:
         """
         validation_results = {
             "business_id": str(business_id),
-            "validated_at": datetime.utcnow().isoformat(),
+            "validated_at": datetime.now(timezone.utc).isoformat(),
             "compliant": True,
             "issues": [],
             "recommendations": [],
@@ -549,7 +549,7 @@ class GDPRComplianceService:
             select(Review).where(
                 and_(
                     Review.business_id == business_id,
-                    Review.created_at < datetime.utcnow() - timedelta(days=365 * 2)
+                    Review.created_at < datetime.now(timezone.utc) - timedelta(days=365 * 2)
                 )
             )
         )
@@ -568,7 +568,7 @@ class GDPRComplianceService:
             select(Conversation).where(
                 and_(
                     Conversation.business_id == business_id,
-                    Conversation.updated_at < datetime.utcnow() - timedelta(days=30)
+                    Conversation.updated_at < datetime.now(timezone.utc) - timedelta(days=30)
                 )
             )
         )
@@ -607,7 +607,7 @@ class GDPRComplianceService:
             # Delete conversations older than 30 days
             old_conversations_result = await self.db.execute(
                 select(Conversation).where(
-                    Conversation.updated_at < datetime.utcnow() - timedelta(days=30)
+                    Conversation.updated_at < datetime.now(timezone.utc) - timedelta(days=30)
                 )
             )
             old_conversations = old_conversations_result.scalars().all()
@@ -625,7 +625,7 @@ class GDPRComplianceService:
                 # Delete conversations
                 conversations_delete_result = await self.db.execute(
                     delete(Conversation).where(
-                        Conversation.updated_at < datetime.utcnow() - timedelta(days=30)
+                        Conversation.updated_at < datetime.now(timezone.utc) - timedelta(days=30)
                     )
                 )
                 cleanup_stats["conversations_deleted"] = conversations_delete_result.rowcount
@@ -633,7 +633,7 @@ class GDPRComplianceService:
             # Delete old analytics data (older than 12 months)
             old_analytics_delete_result = await self.db.execute(
                 delete(DailyAnalytics).where(
-                    DailyAnalytics.date < datetime.utcnow().date() - timedelta(days=365)
+                    DailyAnalytics.date < datetime.now(timezone.utc).date() - timedelta(days=365)
                 )
             )
             cleanup_stats["old_analytics_deleted"] = old_analytics_delete_result.rowcount

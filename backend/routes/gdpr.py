@@ -7,7 +7,7 @@ consent management, data subject rights, privacy notices, and data breach report
 
 from typing import List, Optional
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -108,7 +108,7 @@ async def create_data_subject_request(
 
 @router.get("/privacy-notice", response_model=PrivacyNoticeResponse)
 async def get_privacy_notice(
-    language: str = Query(default="en", regex="^(en|de|tr|ar)$"),
+    language: str = Query(default="en", pattern="^(en|de|tr|ar)$"),
     db: AsyncSession = Depends(get_db_session),
 ):
     """Get the privacy notice for GDPR compliance.
@@ -209,7 +209,7 @@ async def cleanup_expired_data(
         conversations_deleted=cleanup_stats["conversations_deleted"],
         messages_deleted=cleanup_stats["messages_deleted"],
         old_analytics_deleted=cleanup_stats["old_analytics_deleted"],
-        cleanup_completed_at=datetime.utcnow(),
+        cleanup_completed_at=datetime.now(timezone.utc),
     )
 
 

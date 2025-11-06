@@ -8,7 +8,7 @@ real-time dashboard data updates every 4 hours.
 import logging
 import asyncio
 from typing import List, Optional, Dict, Any
-from datetime import datetime, time, timedelta
+from datetime import datetime, time, timedelta, timezone
 from uuid import UUID
 
 from backend.services.review.processor import ReviewProcessingService
@@ -151,7 +151,7 @@ class SchedulerService:
             )
 
             return {
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "businesses_processed": len(businesses),
                 "total_reviews_processed": total_processed,
                 "total_errors": total_errors,
@@ -178,7 +178,7 @@ class SchedulerService:
             cache_stats = await self._analytics_service.get_cache_stats()
             
             return {
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "cache_stats": cache_stats,
                 "status": "completed",
             }
@@ -212,7 +212,7 @@ class SchedulerService:
                 raise ValueError(f"Invalid backup type: {backup_type}")
             
             return {
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "backup_id": metadata.backup_id,
                 "backup_type": metadata.backup_type.value,
                 "file_size": metadata.file_size,

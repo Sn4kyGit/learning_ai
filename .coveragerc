@@ -1,0 +1,158 @@
+# Coverage configuration for Local Business Intelligence Bot
+# This file provides comprehensive coverage configuration with critical path validation
+
+[run]
+# Source code to measure
+source = backend
+
+# Enable branch coverage for more comprehensive analysis
+branch = True
+
+# Enable parallel processing for faster coverage collection
+parallel = True
+
+# Data file location
+data_file = .coverage
+
+# Files and directories to omit from coverage
+omit = 
+    # Test files
+    backend/tests/*
+    */test_*.py
+    *_test.py
+    backend/conftest.py
+    
+    # Migration and database setup files
+    backend/migrations/*
+    backend/alembic/*
+    alembic/*
+    
+    # Entry points and admin scripts
+    backend/main.py
+    backend/create_admin.py
+    run_backend.py
+    
+    # Virtual environments
+    */venv/*
+    */env/*
+    */.venv/*
+    
+    # Cache and build directories
+    */__pycache__/*
+    */build/*
+    */dist/*
+    
+    # Configuration files
+    */conftest.py
+
+# Include patterns (if needed to override omit)
+include = 
+    backend/*
+
+[report]
+# Exclude lines from coverage reporting
+exclude_lines =
+    # Standard pragma
+    pragma: no cover
+    
+    # Don't complain about missing debug-only code
+    def __repr__
+    def __str__
+    if self\.debug
+    if settings\.DEBUG
+    
+    # Don't complain if tests don't hit defensive assertion code
+    raise AssertionError
+    raise NotImplementedError
+    
+    # Don't complain if non-runnable code isn't run
+    if 0:
+    if False:
+    if __name__ == .__main__.:
+    
+    # Don't complain about abstract methods
+    class .*\bProtocol\):
+    @(abc\.)?abstractmethod
+    @abstractmethod
+    
+    # Type checking imports
+    if TYPE_CHECKING:
+    
+    # Defensive assertions
+    assert False
+    
+    # Platform specific code
+    if sys\.platform
+    
+    # Exception handling that shouldn't be tested
+    except ImportError:
+    except ModuleNotFoundError:
+    
+    # Logging statements (often not critical for coverage)
+    logger\.debug
+    logger\.info
+    
+    # Development/debugging code
+    print\(.*\)  # Remove this if print statements should be covered
+
+# Show missing line numbers in report
+show_missing = True
+
+# Precision for coverage percentage
+precision = 2
+
+# Minimum coverage threshold (will cause failure if not met)
+fail_under = 80
+
+# Skip files that are fully covered (cleaner output)
+skip_covered = False
+
+# Skip empty files
+skip_empty = True
+
+# Sort order for coverage report
+sort = Cover
+
+[html]
+# HTML report directory
+directory = htmlcov
+
+# Title for HTML report
+title = Local Business Intelligence Bot - Coverage Report
+
+# Show execution contexts in HTML report
+show_contexts = True
+
+# Extra CSS for custom styling
+extra_css = 
+
+# Skip files that are fully covered in HTML report
+skip_covered = False
+
+# Skip empty files in HTML report
+skip_empty = True
+
+[xml]
+# XML report output file
+output = coverage.xml
+
+[json]
+# JSON report output file
+output = coverage.json
+
+# Show execution contexts in JSON report
+show_contexts = True
+
+# Pretty print JSON output
+pretty_print = True
+
+[paths]
+# Path mapping for different environments
+source = 
+    backend/
+    /app/backend/
+    C:\projects\businessbot\backend\
+    /home/runner/work/*/backend/
+
+# This section helps with coverage combination across different environments
+# Useful for CI/CD where paths might differ

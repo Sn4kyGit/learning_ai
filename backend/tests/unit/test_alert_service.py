@@ -8,7 +8,7 @@ crisis management mode, and multi-channel notifications.
 import pytest
 from unittest.mock import Mock, AsyncMock
 from uuid import UUID, uuid4
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass
 
 from backend.services.notification.alert_service import (
@@ -32,7 +32,7 @@ class MockEmailService:
             "recipient": recipient,
             "subject": subject,
             "body": body,
-            "timestamp": datetime.utcnow()
+            "timestamp": datetime.now(timezone.utc)
         })
 
 
@@ -47,7 +47,7 @@ class MockSMSService:
         self.sent_sms.append({
             "phone": phone,
             "message": message,
-            "timestamp": datetime.utcnow()
+            "timestamp": datetime.now(timezone.utc)
         })
 
 
@@ -63,7 +63,7 @@ class MockPushService:
             "user_id": user_id,
             "title": title,
             "message": message,
-            "timestamp": datetime.utcnow()
+            "timestamp": datetime.now(timezone.utc)
         })
 
 
@@ -105,9 +105,9 @@ def sample_review():
         rating=1,
         text="Terrible service and dirty restaurant. Food was cold and staff was rude.",
         language="en",
-        published_at=datetime.utcnow(),
+        published_at=datetime.now(timezone.utc),
         source="google",
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
     )
 
 
@@ -166,6 +166,7 @@ class TestAlertService:
     """Test suite for AlertService."""
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_handle_critical_review_success(
         self, alert_service, sample_review, critical_classification, sample_recipients
     ):
@@ -180,6 +181,7 @@ class TestAlertService:
         alert_service._get_business_recipients.assert_called_once_with(sample_review.business_id)
         alert_service._check_crisis_mode.assert_called_once_with(sample_review.business_id)
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_handle_competitor_mention_success(
         self, alert_service, sample_review, competitor_classification, sample_recipients
@@ -200,6 +202,7 @@ class TestAlertService:
         assert call_args[1]["delay_minutes"] == 15
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_handle_rating_drop_below_threshold(self, alert_service, sample_recipients):
         """Test rating drop alert when falling below threshold."""
         # Arrange
@@ -216,6 +219,7 @@ class TestAlertService:
         alert_service._get_business_recipients.assert_called_once_with(business_id)
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_handle_rating_drop_no_alert_above_threshold(self, alert_service):
         """Test no alert when rating stays above threshold."""
         # Arrange
@@ -231,6 +235,7 @@ class TestAlertService:
         alert_service._get_business_recipients.assert_not_called()
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_send_critical_alert_all_channels(
         self, alert_service, mock_services, sample_recipients
     ):
@@ -244,7 +249,7 @@ class TestAlertService:
             message="Critical review detected",
             review_text="Terrible service",
             classification_data={"sentiment": "negative"},
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
 
         # Act
@@ -262,6 +267,7 @@ class TestAlertService:
         # Assert - Push notifications sent to all recipients
         assert len(mock_services["push"].sent_notifications) == 2
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_send_critical_alert_respects_preferences(
         self, alert_service, mock_services
@@ -295,7 +301,7 @@ class TestAlertService:
             message="Test alert",
             review_text="Test review",
             classification_data={},
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
 
         # Act
@@ -311,6 +317,7 @@ class TestAlertService:
         assert len(mock_services["push"].sent_notifications) == 0
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_send_sms_only_for_high_severity(
         self, alert_service, mock_services, sample_recipients
     ):
@@ -324,7 +331,7 @@ class TestAlertService:
             message="Competitor mentioned",
             review_text="Test review",
             classification_data={},
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
 
         # Act
@@ -337,6 +344,7 @@ class TestAlertService:
         assert len(mock_services["email"].sent_emails) == 2
         assert len(mock_services["push"].sent_notifications) == 2
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_critical_review_detection_algorithm(
         self, alert_service, sample_recipients
@@ -353,9 +361,9 @@ class TestAlertService:
             rating=1,
             text="Worst service ever, dirty tables, rude staff",
             language="en",
-            published_at=datetime.utcnow(),
+            published_at=datetime.now(timezone.utc),
             source="google",
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
         
         critical_classification = ClassificationResult(
@@ -376,6 +384,7 @@ class TestAlertService:
         alert_service._check_crisis_mode.assert_called_once()
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_competitor_mention_detection(
         self, alert_service, sample_recipients
     ):
@@ -390,9 +399,9 @@ class TestAlertService:
             rating=2,
             text="This place is not as good as McDonald's down the street",
             language="en",
-            published_at=datetime.utcnow(),
+            published_at=datetime.now(timezone.utc),
             source="google",
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
         
         competitor_classification = ClassificationResult(
@@ -413,6 +422,7 @@ class TestAlertService:
         alert_service._schedule_delayed_notification.assert_called_once()
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_crisis_management_mode_trigger(self, alert_service):
         """Test crisis management mode trigger logic."""
         # Arrange
@@ -424,6 +434,7 @@ class TestAlertService:
         # Assert - Method should be called (implementation details tested separately)
         alert_service._check_crisis_mode.assert_called_once_with(business_id)
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_alert_threshold_configuration(self, alert_service, sample_recipients):
         """Test configurable alert thresholds."""
@@ -443,6 +454,7 @@ class TestAlertService:
         alert_service._get_business_recipients.assert_called_once_with(business_id)
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_error_handling_in_critical_review(
         self, alert_service, sample_review, critical_classification
     ):
@@ -457,6 +469,7 @@ class TestAlertService:
         alert_service._get_business_recipients.assert_called_once()
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_error_handling_in_competitor_mention(
         self, alert_service, sample_review, competitor_classification
     ):
@@ -470,6 +483,7 @@ class TestAlertService:
         # Assert - Error should be logged but not raised
         alert_service._get_super_admin_recipients.assert_called_once()
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_notification_channel_failure_handling(
         self, alert_service, mock_services, sample_recipients
@@ -486,7 +500,7 @@ class TestAlertService:
             message="Test alert",
             review_text="Test review",
             classification_data={},
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
 
         # Act - Should not raise exception
@@ -496,6 +510,7 @@ class TestAlertService:
         assert len(mock_services["sms"].sent_sms) == 1
         assert len(mock_services["push"].sent_notifications) == 2
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_alert_message_truncation(
         self, alert_service, sample_recipients
@@ -511,9 +526,9 @@ class TestAlertService:
             rating=1,
             text="A" * 300,  # Very long review text
             language="en",
-            published_at=datetime.utcnow(),
+            published_at=datetime.now(timezone.utc),
             source="google",
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
         
         classification = ClassificationResult(
@@ -533,6 +548,7 @@ class TestAlertService:
         alert_service._get_business_recipients.assert_called_once()
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_delayed_notification_scheduling(self, alert_service):
         """Test delayed notification scheduling for competitor mentions."""
         # Arrange
@@ -544,7 +560,7 @@ class TestAlertService:
             message="Competitor mentioned",
             review_text="Test review",
             classification_data={},
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
         recipients = []
 

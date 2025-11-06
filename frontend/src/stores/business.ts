@@ -1,12 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { businessService } from '@/services/business'
+import type { Business } from '@/types'
 
 export const useBusinessStore = defineStore('business', () => {
-  const businesses = ref([])
-  const currentBusiness = ref(null)
+  const businesses = ref<Business[]>([])
+  const currentBusiness = ref<Business | null>(null)
   const loading = ref(false)
-  const error = ref(null)
+  const error = ref<string | null>(null)
 
   const hasBusinesses = computed(() => businesses.value.length > 0)
   const businessCount = computed(() => businesses.value.length)
@@ -22,7 +23,7 @@ export const useBusinessStore = defineStore('business', () => {
       if (businesses.value.length > 0 && !currentBusiness.value) {
         currentBusiness.value = businesses.value[0]
       }
-    } catch (err) {
+    } catch (err: any) {
       error.value = err.message
       throw err
     } finally {
@@ -30,7 +31,7 @@ export const useBusinessStore = defineStore('business', () => {
     }
   }
 
-  async function createBusiness(businessData) {
+  async function createBusiness(businessData: any) {
     loading.value = true
     error.value = null
     
@@ -44,7 +45,7 @@ export const useBusinessStore = defineStore('business', () => {
       }
       
       return newBusiness
-    } catch (err) {
+    } catch (err: any) {
       error.value = err.message
       throw err
     } finally {
@@ -52,7 +53,7 @@ export const useBusinessStore = defineStore('business', () => {
     }
   }
 
-  async function updateBusiness(businessId, updates) {
+  async function updateBusiness(businessId: string, updates: any) {
     loading.value = true
     error.value = null
     
@@ -69,7 +70,7 @@ export const useBusinessStore = defineStore('business', () => {
       }
       
       return updatedBusiness
-    } catch (err) {
+    } catch (err: any) {
       error.value = err.message
       throw err
     } finally {
@@ -77,7 +78,7 @@ export const useBusinessStore = defineStore('business', () => {
     }
   }
 
-  async function deleteBusiness(businessId) {
+  async function deleteBusiness(businessId: string) {
     loading.value = true
     error.value = null
     
@@ -89,7 +90,7 @@ export const useBusinessStore = defineStore('business', () => {
       if (currentBusiness.value?.id === businessId) {
         currentBusiness.value = businesses.value[0] || null
       }
-    } catch (err) {
+    } catch (err: any) {
       error.value = err.message
       throw err
     } finally {
@@ -97,8 +98,39 @@ export const useBusinessStore = defineStore('business', () => {
     }
   }
 
-  function setCurrentBusiness(business) {
+  function setCurrentBusiness(business: Business) {
     currentBusiness.value = business
+  }
+
+  async function importReviews(businessId: string, options: any = {}) {
+    loading.value = true
+    error.value = null
+    
+    try {
+      const result = await businessService.importReviews(businessId, options)
+      
+      // Update the business with new review count if available
+      const business = businesses.value.find(b => b.id === businessId)
+      if (business && result.imported_count > 0) {
+        business.total_reviews = (business.total_reviews || 0) + result.imported_count
+      }
+      
+      return result
+    } catch (err: any) {
+      error.value = err.message
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function getImportStatus(businessId: string) {
+    try {
+      return await businessService.getImportStatus(businessId)
+    } catch (err: any) {
+      error.value = err.message
+      throw err
+    }
   }
 
   function clearError() {
@@ -116,6 +148,8 @@ export const useBusinessStore = defineStore('business', () => {
     createBusiness,
     updateBusiness,
     deleteBusiness,
+    importReviews,
+    getImportStatus,
     setCurrentBusiness,
     clearError
   }

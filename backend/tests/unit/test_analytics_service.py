@@ -6,10 +6,11 @@ caching, trend analysis, and multi-business metrics.
 """
 
 import pytest
+import asyncio
 from decimal import Decimal
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from backend.services.analytics_service import AnalyticsService, CacheEntry
 from backend.services.analytics.calculator import DashboardData, TrendAnalysis
@@ -40,7 +41,7 @@ class MockAnalyticsCalculator:
                 {"date": "2024-01-01", "avg_rating": 4.1, "review_count": 5},
                 {"date": "2024-01-02", "avg_rating": 4.3, "review_count": 8},
             ],
-            last_updated=datetime.utcnow(),
+            last_updated=datetime.now(timezone.utc),
         )
 
     async def calculate_trends(self, business_id, days=30):
@@ -114,8 +115,8 @@ class TestAnalyticsService:
 
     def setup_method(self):
         """Set up test fixtures."""
-        self.review_repo = Mock()
-        self.classification_repo = Mock()
+        self.review_repo = AsyncMock()
+        self.classification_repo = AsyncMock()
         self.business_repo = MockBusinessRepository()
         
         self.service = AnalyticsService(
@@ -132,6 +133,7 @@ class TestAnalyticsService:
         # Test data
         self.business_id = uuid4()
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_get_dashboard_data_fresh_calculation(self):
         """Test getting dashboard data with fresh calculation."""
@@ -155,6 +157,7 @@ class TestAnalyticsService:
         assert cache_key in self.service._cache
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_get_dashboard_data_from_cache(self):
         """Test getting dashboard data from cache."""
         # Arrange - First call to populate cache
@@ -173,6 +176,7 @@ class TestAnalyticsService:
         assert len(self.mock_calculator.dashboard_data_calls) == 0
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_get_dashboard_data_force_refresh(self):
         """Test getting dashboard data with force refresh."""
         # Arrange - First call to populate cache
@@ -190,6 +194,7 @@ class TestAnalyticsService:
         # Verify calculator was called again
         assert len(self.mock_calculator.dashboard_data_calls) == 1
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_get_trend_analysis_with_caching(self):
         """Test getting trend analysis with caching."""
@@ -214,6 +219,7 @@ class TestAnalyticsService:
         assert len(self.mock_calculator.trends_calls) == 1
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_get_trend_analysis_different_periods(self):
         """Test trend analysis with different time periods."""
         # Act
@@ -229,6 +235,7 @@ class TestAnalyticsService:
         assert self.mock_calculator.trends_calls[0] == (self.business_id, 30)
         assert self.mock_calculator.trends_calls[1] == (self.business_id, 7)
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_get_business_score_with_caching(self):
         """Test getting business score with caching."""
@@ -253,6 +260,7 @@ class TestAnalyticsService:
         assert len(self.mock_calculator.score_calls) == 1
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_update_business_analytics(self):
         """Test updating business analytics."""
         # Arrange - Populate cache first
@@ -275,6 +283,7 @@ class TestAnalyticsService:
         assert cache_key in self.service._cache  # Should be repopulated
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_get_multi_business_dashboard(self):
         """Test getting dashboard data for multiple businesses."""
         # Arrange
@@ -294,6 +303,7 @@ class TestAnalyticsService:
         # Verify calculator was called for each business
         assert len(self.mock_calculator.dashboard_data_calls) == 3
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_get_multi_business_dashboard_with_error(self):
         """Test multi-business dashboard handles individual business errors."""
@@ -324,6 +334,7 @@ class TestAnalyticsService:
         assert result[str(business_ids[1])].total_reviews == 0
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_get_consolidated_metrics(self):
         """Test getting consolidated metrics across multiple businesses."""
         # Arrange
@@ -342,6 +353,7 @@ class TestAnalyticsService:
         assert "food_quality" in result["top_topics"]
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_get_consolidated_metrics_no_reviews(self):
         """Test consolidated metrics when no reviews exist."""
         # Arrange
@@ -359,7 +371,7 @@ class TestAnalyticsService:
                 response_rate=Decimal("0.0"),
                 avg_response_time_hours=None,
                 trend_data=[],
-                last_updated=datetime.utcnow(),
+                last_updated=datetime.now(timezone.utc),
             )
         
         self.mock_calculator.calculate_dashboard_data = mock_empty_dashboard
@@ -375,6 +387,7 @@ class TestAnalyticsService:
         assert len(result["top_topics"]) == 0
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_schedule_cache_refresh(self):
         """Test scheduled cache refresh."""
         # Act
@@ -385,6 +398,7 @@ class TestAnalyticsService:
         # (MockBusinessRepository returns 3 businesses)
         assert len(self.mock_calculator.dashboard_data_calls) == 3
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_cache_invalidation(self):
         """Test cache invalidation for a business."""
@@ -404,6 +418,7 @@ class TestAnalyticsService:
         assert len(self.service._cache) == 0
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_cache_stats(self):
         """Test getting cache statistics."""
         # Arrange - Add some cache entries
@@ -420,12 +435,13 @@ class TestAnalyticsService:
         assert stats["cache_ttl_hours"] == 4
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_cache_expiration(self):
         """Test cache expiration handling."""
         # Arrange - Manually add expired cache entry
         expired_entry = CacheEntry(
             data=Mock(),
-            expires_at=datetime.utcnow() - timedelta(hours=1)  # Expired 1 hour ago
+            expires_at=datetime.now(timezone.utc) - timedelta(hours=1)  # Expired 1 hour ago
         )
         self.service._cache["expired_key"] = expired_entry
 
@@ -441,12 +457,13 @@ class TestAnalyticsService:
         assert stats["expired_entries"] == 1
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_cleanup_expired_cache(self):
         """Test cleanup of expired cache entries."""
         # Arrange - Add expired and active entries
         expired_entry = CacheEntry(
             data=Mock(),
-            expires_at=datetime.utcnow() - timedelta(hours=1)
+            expires_at=datetime.now(timezone.utc) - timedelta(hours=1)
         )
         self.service._cache["expired_key"] = expired_entry
 
@@ -464,6 +481,7 @@ class TestAnalyticsService:
         assert "expired_key" not in self.service._cache
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_clear_cache(self):
         """Test clearing all cache."""
         # Arrange - Populate cache
@@ -479,6 +497,7 @@ class TestAnalyticsService:
         assert len(self.service._cache) == 0
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_error_handling_with_fallback_cache(self):
         """Test error handling falls back to expired cache when available."""
         # Arrange - Populate cache first
@@ -486,7 +505,7 @@ class TestAnalyticsService:
         
         # Manually expire the cache entry
         cache_key = f"dashboard_{self.business_id}"
-        self.service._cache[cache_key].expires_at = datetime.utcnow() - timedelta(hours=1)
+        self.service._cache[cache_key].expires_at = datetime.now(timezone.utc) - timedelta(hours=1)
         
         # Mock calculator to fail
         self.mock_calculator.calculate_dashboard_data = AsyncMock(
@@ -500,6 +519,7 @@ class TestAnalyticsService:
         # Should return expired cached data instead of raising exception
         assert result.avg_rating == Decimal("4.2")
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_concurrent_cache_access(self):
         """Test concurrent access to cache doesn't cause issues."""

@@ -8,7 +8,7 @@ caching, and real-time data updates for the business intelligence platform.
 import logging
 from typing import Dict, List, Any, Optional
 from uuid import UUID
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 from decimal import Decimal
 from dataclasses import dataclass
 import asyncio
@@ -78,7 +78,7 @@ class AnalyticsService:
         # Check cache first (unless force refresh)
         if not force_refresh and cache_key in self._cache:
             entry = self._cache[cache_key]
-            if datetime.utcnow() < entry.expires_at:
+            if datetime.now(timezone.utc) < entry.expires_at:
                 logger.debug(f"Returning cached dashboard data for business {business_id}")
                 return entry.data
 
@@ -90,7 +90,7 @@ class AnalyticsService:
             # Cache the result
             self._cache[cache_key] = CacheEntry(
                 data=dashboard_data,
-                expires_at=datetime.utcnow() + self._cache_ttl
+                expires_at=datetime.now(timezone.utc) + self._cache_ttl
             )
             
             return dashboard_data
@@ -124,7 +124,7 @@ class AnalyticsService:
         # Check cache first
         if not force_refresh and cache_key in self._cache:
             entry = self._cache[cache_key]
-            if datetime.utcnow() < entry.expires_at:
+            if datetime.now(timezone.utc) < entry.expires_at:
                 logger.debug(f"Returning cached trend analysis for business {business_id}")
                 return entry.data
 
@@ -136,7 +136,7 @@ class AnalyticsService:
             # Cache the result
             self._cache[cache_key] = CacheEntry(
                 data=trend_analysis,
-                expires_at=datetime.utcnow() + self._cache_ttl
+                expires_at=datetime.now(timezone.utc) + self._cache_ttl
             )
             
             return trend_analysis
@@ -167,7 +167,7 @@ class AnalyticsService:
         # Check cache first
         if not force_refresh and cache_key in self._cache:
             entry = self._cache[cache_key]
-            if datetime.utcnow() < entry.expires_at:
+            if datetime.now(timezone.utc) < entry.expires_at:
                 return entry.data
 
         try:
@@ -177,7 +177,7 @@ class AnalyticsService:
             # Cache the result
             self._cache[cache_key] = CacheEntry(
                 data=business_score,
-                expires_at=datetime.utcnow() + self._cache_ttl
+                expires_at=datetime.now(timezone.utc) + self._cache_ttl
             )
             
             return business_score
@@ -252,7 +252,7 @@ class AnalyticsService:
                         response_rate=Decimal("0.0"),
                         avg_response_time_hours=None,
                         trend_data=[],
-                        last_updated=datetime.utcnow(),
+                        last_updated=datetime.now(timezone.utc),
                     )
                 else:
                     result[str(business_id)] = data
@@ -391,7 +391,7 @@ class AnalyticsService:
         Returns:
             Dictionary with cache statistics
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         active_entries = sum(1 for entry in self._cache.values() if entry.expires_at > now)
         expired_entries = len(self._cache) - active_entries
         
@@ -413,7 +413,7 @@ class AnalyticsService:
         Returns:
             Number of entries removed
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expired_keys = [
             key for key, entry in self._cache.items()
             if entry.expires_at <= now

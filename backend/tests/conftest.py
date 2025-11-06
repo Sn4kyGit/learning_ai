@@ -6,12 +6,17 @@ for the test suite.
 """
 
 import pytest
+import pytest_asyncio
 import asyncio
-from typing import AsyncGenerator, Generator
+import warnings
+from typing import AsyncGenerator, Generator, Any, List
 from unittest.mock import Mock, AsyncMock
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.pool import StaticPool
+from httpx import AsyncClient
 import uuid
+from decimal import Decimal
+from datetime import datetime, timedelta
 
 from backend.db.database import Base
 from backend.db.models import Business, Organization, User, Review, Classification
@@ -19,31 +24,55 @@ from backend.ai.base import (
     ReviewClassifierProtocol,
     BusinessAdvisorProtocol,
     CostTracker,
+    ClassificationResult,
+    AdvisorResponse,
+    WeeklyReport,
 )
 from backend.ai.language_detector import LanguageDetector
 from backend.config import Settings
 
+# Suppress specific warnings during test execution
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
+warnings.filterwarnings("ignore", message=".*coroutine.*was never awaited.*")
 
 # Test database URL (in-memory SQLite for fast tests)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 
+class TestConfig:
+    """Test-specific configuration."""
+    DATABASE_URL = TEST_DATABASE_URL
+    REDIS_URL = "redis://localhost:6379/1"
+    AI_SERVICES_MOCK = True
+    EMAIL_BACKEND = "mock"
+    ENVIRONMENT = "test"
+    SECRET_KEY = "test-secret-key-for-testing-only"
+    OPENAI_API_KEY = "test-openai-key"
+    ANTHROPIC_API_KEY = "test-anthropic-key"
+    GOOGLE_PLACES_API_KEY = "test-google-key"
+
+
 @pytest.fixture(scope="session")
-def event_loop() -> Generator:
+def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
     """Create an instance of the default event loop for the test session."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
+    policy = asyncio.get_event_loop_policy()
+    loop = policy.new_event_loop()
     yield loop
     loop.close()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture(scope="function")
 async def test_db_engine():
-    """Create test database engine."""
+    """Create test database engine with proper cleanup."""
     engine = create_async_engine(
         TEST_DATABASE_URL,
         echo=False,
         poolclass=StaticPool,
-        connect_args={"check_same_thread": False},
+        connect_args={
+            "check_same_thread": False,
+            "isolation_level": None,
+        },
     )
 
     # Create all tables
@@ -53,18 +82,54 @@ async def test_db_engine():
     yield engine
 
     # Clean up
-    await engine.dispose()
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+    except Exception:
+        pass  # Ignore cleanup errors
+    finally:
+        await engine.dispose()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_db_session(test_db_engine) -> AsyncGenerator[AsyncSession, None]:
-    """Create test database session."""
+    """Create test database session with automatic rollback."""
     async_session_maker = async_sessionmaker(
-        test_db_engine, class_=AsyncSession, expire_on_commit=False
+        test_db_engine, 
+        class_=AsyncSession, 
+        expire_on_commit=False,
+        autoflush=False,
+        autocommit=False
     )
 
     async with async_session_maker() as session:
-        yield session
+        try:
+            yield session
+        finally:
+            # Rollback any pending transactions
+            if session.in_transaction():
+                await session.rollback()
+            await session.close()
+
+
+@pytest_asyncio.fixture
+async def test_client(test_db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
+    """Provide test client with database override."""
+    from backend.main import app
+    from backend.db.database import get_db_session
+    from httpx import ASGITransport
+    
+    async def override_get_db():
+        yield test_db_session
+    
+    app.dependency_overrides[get_db_session] = override_get_db
+    
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
+    
+    # Clean up overrides
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
@@ -82,13 +147,11 @@ def test_settings() -> Settings:
 
 
 @pytest.fixture
-def mock_classifier() -> Mock:
-    """Create mock review classifier."""
-    classifier = Mock(spec=ReviewClassifierProtocol)
+def mock_classifier() -> AsyncMock:
+    """Create mock review classifier with proper async behavior."""
+    classifier = AsyncMock(spec=ReviewClassifierProtocol)
 
     # Configure default responses
-    from backend.ai.base import ClassificationResult
-
     async def mock_classify_review(text: str, language: str = "en"):
         return ClassificationResult(
             sentiment="positive",
@@ -101,24 +164,22 @@ def mock_classifier() -> Mock:
         )
 
     async def mock_classify_batch(reviews):
-        return [await mock_classify_review(review.text) for review in reviews]
+        if isinstance(reviews, list):
+            return [await mock_classify_review(getattr(review, 'text', str(review))) for review in reviews]
+        return []
 
-    classifier.classify_review = AsyncMock(side_effect=mock_classify_review)
-    classifier.classify_batch = AsyncMock(side_effect=mock_classify_batch)
+    classifier.classify_review.side_effect = mock_classify_review
+    classifier.classify_batch.side_effect = mock_classify_batch
 
     return classifier
 
 
 @pytest.fixture
-def mock_advisor() -> Mock:
-    """Create mock business advisor."""
-    advisor = Mock(spec=BusinessAdvisorProtocol)
+def mock_advisor() -> AsyncMock:
+    """Create mock business advisor with proper async behavior."""
+    advisor = AsyncMock(spec=BusinessAdvisorProtocol)
 
-    from backend.ai.base import AdvisorResponse, WeeklyReport
-    from decimal import Decimal
-    from datetime import datetime, timedelta
-
-    async def mock_generate_response(message: str, context, language: str = "en"):
+    async def mock_generate_response(message: str, context=None, language: str = "en"):
         return AdvisorResponse(
             message="Based on your reviews, I recommend focusing on customer service.",
             language=language,
@@ -128,9 +189,10 @@ def mock_advisor() -> Mock:
             cost_usd=Decimal("0.001"),
         )
 
-    async def mock_generate_report(business_data, language: str = "en"):
+    async def mock_generate_report(business_data=None, language: str = "en"):
+        business_id = getattr(business_data, 'business_id', 'test-business-id') if business_data else 'test-business-id'
         return WeeklyReport(
-            business_id=business_data.business_id,
+            business_id=business_id,
             report_period_start=datetime.now() - timedelta(days=7),
             report_period_end=datetime.now(),
             summary="Your restaurant performed well this week.",
@@ -142,31 +204,39 @@ def mock_advisor() -> Mock:
             ai_model="mock-claude-haiku",
         )
 
-    advisor.generate_response = AsyncMock(side_effect=mock_generate_response)
-    advisor.generate_report = AsyncMock(side_effect=mock_generate_report)
+    advisor.generate_response.side_effect = mock_generate_response
+    advisor.generate_report.side_effect = mock_generate_report
 
     return advisor
 
 
 @pytest.fixture
-def mock_cost_tracker() -> Mock:
-    """Create mock cost tracker."""
-    cost_tracker = Mock(spec=CostTracker)
-
-    from decimal import Decimal
+def mock_cost_tracker() -> AsyncMock:
+    """Create mock cost tracker with proper async behavior."""
+    cost_tracker = AsyncMock(spec=CostTracker)
 
     async def mock_log_usage(*args, **kwargs):
-        pass
+        return None
 
-    async def mock_get_monthly_cost(business_id: str):
+    async def mock_get_monthly_cost(business_id: str = None):
         return Decimal("25.50")
 
-    async def mock_check_cost_limit(business_id: str):
+    async def mock_check_cost_limit(business_id: str = None):
         return True
 
-    cost_tracker.log_usage = AsyncMock(side_effect=mock_log_usage)
-    cost_tracker.get_monthly_cost = AsyncMock(side_effect=mock_get_monthly_cost)
-    cost_tracker.check_cost_limit = AsyncMock(side_effect=mock_check_cost_limit)
+    async def mock_get_cost_summary(business_id: str = None):
+        return {
+            "total_cost": Decimal("25.50"),
+            "classification_cost": Decimal("15.30"),
+            "chat_cost": Decimal("8.20"),
+            "report_cost": Decimal("2.00"),
+            "usage_percentage": 25.5
+        }
+
+    cost_tracker.log_usage.side_effect = mock_log_usage
+    cost_tracker.get_monthly_cost.side_effect = mock_get_monthly_cost
+    cost_tracker.check_cost_limit.side_effect = mock_check_cost_limit
+    cost_tracker.get_cost_summary.side_effect = mock_get_cost_summary
 
     return cost_tracker
 
@@ -190,13 +260,13 @@ def mock_language_detector() -> LanguageDetector:
     return detector
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_organization(test_db_session: AsyncSession) -> Organization:
     """Create test organization."""
     org = Organization(
         name="Test Restaurant Group",
         subscription_tier="premium",
-        cost_limit_monthly=200.00,
+        cost_limit_monthly=Decimal("200.00"),
     )
 
     test_db_session.add(org)
@@ -206,7 +276,7 @@ async def test_organization(test_db_session: AsyncSession) -> Organization:
     return org
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_business(
     test_db_session: AsyncSession, test_organization: Organization
 ) -> Business:
@@ -228,7 +298,7 @@ async def test_business(
     return business
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_user(
     test_db_session: AsyncSession, test_organization: Organization
 ) -> User:
@@ -249,13 +319,11 @@ async def test_user(
     return user
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_reviews(
     test_db_session: AsyncSession, test_business: Business
-) -> list[Review]:
+) -> List[Review]:
     """Create test reviews."""
-    from datetime import datetime, timedelta
-
     reviews = [
         Review(
             business_id=test_business.id,
@@ -263,7 +331,7 @@ async def test_reviews(
             rating=5,
             text="Excellent food and service!",
             language="en",
-            published_at=datetime.utcnow() - timedelta(days=1),
+            published_at=datetime.now() - timedelta(days=1),
             source="google",
             external_id="review-1",
         ),
@@ -273,7 +341,7 @@ async def test_reviews(
             rating=2,
             text="Food was cold and service was slow.",
             language="en",
-            published_at=datetime.utcnow() - timedelta(days=2),
+            published_at=datetime.now() - timedelta(days=2),
             source="google",
             external_id="review-2",
         ),
@@ -283,7 +351,7 @@ async def test_reviews(
             rating=4,
             text="Good food, nice atmosphere.",
             language="en",
-            published_at=datetime.utcnow() - timedelta(days=3),
+            published_at=datetime.now() - timedelta(days=3),
             source="google",
             external_id="review-3",
         ),
@@ -300,10 +368,10 @@ async def test_reviews(
     return reviews
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_classifications(
-    test_db_session: AsyncSession, test_reviews: list[Review]
-) -> list[Classification]:
+    test_db_session: AsyncSession, test_reviews: List[Review]
+) -> List[Classification]:
     """Create test classifications."""
     classifications = [
         Classification(
@@ -312,7 +380,7 @@ async def test_classifications(
             topics=["food_quality", "service"],
             urgency="low",
             competitor_mentioned=False,
-            confidence_score=0.95,
+            confidence_score=Decimal("0.95"),
             ai_model="test-model",
             processing_time_ms=100,
         ),
@@ -322,7 +390,7 @@ async def test_classifications(
             topics=["food_quality", "service"],
             urgency="high",
             competitor_mentioned=False,
-            confidence_score=0.92,
+            confidence_score=Decimal("0.92"),
             ai_model="test-model",
             processing_time_ms=120,
         ),
@@ -332,7 +400,7 @@ async def test_classifications(
             topics=["food_quality", "ambiance"],
             urgency="low",
             competitor_mentioned=False,
-            confidence_score=0.88,
+            confidence_score=Decimal("0.88"),
             ai_model="test-model",
             processing_time_ms=90,
         ),
@@ -349,15 +417,47 @@ async def test_classifications(
     return classifications
 
 
+# Import additional fixtures
+from backend.tests.fixtures.user_fixtures import *
+from backend.tests.fixtures.business_fixtures import *
+from backend.tests.fixtures.mock_responses import *
+from backend.tests.fixtures.database_seeding import DatabaseSeeder, SeedingPresets
+
+
 # Helper functions for tests
 def create_test_uuid() -> str:
     """Create a test UUID string."""
     return str(uuid.uuid4())
 
 
-async def create_test_business_with_data(
-    db_session: AsyncSession, review_count: int = 10
-) -> Business:
-    """Create a test business with reviews and classifications."""
-    # This would be implemented for performance tests
-    pass
+@pytest_asyncio.fixture
+async def database_seeder(test_db_session: AsyncSession) -> DatabaseSeeder:
+    """Provide database seeder for integration tests."""
+    seeder = DatabaseSeeder(test_db_session)
+    yield seeder
+    # Cleanup after test
+    await seeder.cleanup_all()
+
+
+@pytest_asyncio.fixture
+async def minimal_test_data(test_db_session: AsyncSession) -> Dict[str, Any]:
+    """Provide minimal test dataset for unit tests."""
+    return await SeedingPresets.minimal_dataset(test_db_session)
+
+
+@pytest_asyncio.fixture
+async def integration_test_data(test_db_session: AsyncSession) -> Dict[str, Any]:
+    """Provide comprehensive test dataset for integration tests."""
+    return await SeedingPresets.integration_dataset(test_db_session)
+
+
+@pytest_asyncio.fixture
+async def performance_test_data(test_db_session: AsyncSession) -> Dict[str, Any]:
+    """Provide large test dataset for performance tests."""
+    return await SeedingPresets.performance_dataset(test_db_session, review_count=100)
+
+
+@pytest_asyncio.fixture
+async def e2e_test_data(test_db_session: AsyncSession) -> Dict[str, Any]:
+    """Provide complete test dataset for E2E tests."""
+    return await SeedingPresets.e2e_dataset(test_db_session)

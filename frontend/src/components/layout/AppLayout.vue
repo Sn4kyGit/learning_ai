@@ -141,7 +141,8 @@ import {
   ChartBarIcon,
   DocumentTextIcon,
   StarIcon,
-  Cog6ToothIcon
+  Cog6ToothIcon,
+  BuildingOfficeIcon
 } from '@heroicons/vue/24/outline'
 import LanguageSelector from '@/components/common/LanguageSelector.vue'
 import NotificationDropdown from '@/components/common/NotificationDropdown.vue'
@@ -154,6 +155,7 @@ const mobileMenuOpen = ref(false)
 
 const navigation = [
   { name: 'navigation.dashboard', href: '/dashboard', icon: HomeIcon },
+  { name: 'navigation.businesses', href: '/businesses', icon: BuildingOfficeIcon },
   { name: 'navigation.reviews', href: '/reviews', icon: StarIcon },
   { name: 'navigation.chat', href: '/chat', icon: ChatBubbleLeftRightIcon },
   { name: 'navigation.analytics', href: '/analytics', icon: ChartBarIcon },

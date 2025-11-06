@@ -30,6 +30,7 @@ class TestGooglePlacesClient:
         self.business_id = "business-456"
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_get_place_details_success(self):
         """Test successful place details retrieval."""
         # Arrange
@@ -61,6 +62,7 @@ class TestGooglePlacesClient:
             assert len(result["reviews"]) == 1
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_get_place_details_api_error(self):
         """Test place details retrieval with API error."""
         # Arrange
@@ -74,6 +76,7 @@ class TestGooglePlacesClient:
             with pytest.raises(Exception, match="Google Places API error: NOT_FOUND"):
                 await self.client.get_place_details(self.place_id)
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_import_reviews_success(self):
         """Test successful review import."""
@@ -111,6 +114,7 @@ class TestGooglePlacesClient:
                 assert len(result.errors) == 0
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_import_reviews_no_reviews(self):
         """Test import when no reviews are found."""
         # Arrange
@@ -126,6 +130,7 @@ class TestGooglePlacesClient:
             assert result.duplicate_count == 0
             assert result.error_count == 0
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_import_reviews_with_duplicates(self):
         """Test import with duplicate detection."""
@@ -166,6 +171,7 @@ class TestGooglePlacesClient:
                 assert result.error_count == 0
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_import_reviews_with_parsing_errors(self):
         """Test import with review parsing errors."""
         # Arrange
@@ -200,6 +206,7 @@ class TestGooglePlacesClient:
                 assert len(result.errors) == 1
                 assert "Failed to parse review" in result.errors[0]
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_import_reviews_max_limit(self):
         """Test import respects max_reviews limit."""
@@ -321,6 +328,7 @@ class TestGooglePlacesClient:
         assert id1 != id2
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_validate_place_id_valid(self):
         """Test place ID validation for valid place."""
         # Arrange
@@ -333,6 +341,7 @@ class TestGooglePlacesClient:
             # Assert
             assert result is True
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_validate_place_id_invalid(self):
         """Test place ID validation for invalid place."""
@@ -347,6 +356,7 @@ class TestGooglePlacesClient:
             assert result is False
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_validate_place_id_api_error(self):
         """Test place ID validation with API error."""
         # Arrange
@@ -357,6 +367,7 @@ class TestGooglePlacesClient:
             # Assert
             assert result is False
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_import_reviews_with_retry_success_first_attempt(self):
         """Test retry logic succeeds on first attempt."""
@@ -377,6 +388,7 @@ class TestGooglePlacesClient:
             assert result == expected_result
             assert mock_import.call_count == 1
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_import_reviews_with_retry_success_after_failures(self):
         """Test retry logic succeeds after initial failures."""
@@ -409,6 +421,7 @@ class TestGooglePlacesClient:
                 assert mock_sleep.call_count == 2  # Two retries
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_import_reviews_with_retry_all_attempts_fail(self):
         """Test retry logic when all attempts fail."""
         # Arrange
@@ -422,6 +435,7 @@ class TestGooglePlacesClient:
                         self.place_id, self.business_id, max_retries=2
                     )
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_batch_import_reviews_success(self):
         """Test successful batch import for multiple businesses."""
@@ -449,6 +463,7 @@ class TestGooglePlacesClient:
             assert results["business-2"].imported_count == 2
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_batch_import_reviews_partial_failure(self):
         """Test batch import with some businesses failing."""
         # Arrange
@@ -473,6 +488,7 @@ class TestGooglePlacesClient:
             assert results["business-2"].error_count == 1
             assert "API error for business-2" in results["business-2"].errors[0]
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_search_places_success(self):
         """Test successful place search."""
@@ -503,6 +519,7 @@ class TestGooglePlacesClient:
             assert results[1]["name"] == "Restaurant 2"
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_search_places_no_results(self):
         """Test place search with no results."""
         # Arrange
@@ -518,6 +535,7 @@ class TestGooglePlacesClient:
             # Assert
             assert len(results) == 0
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_get_place_photos_success(self):
         """Test successful photo retrieval."""
@@ -542,6 +560,7 @@ class TestGooglePlacesClient:
             assert "ref2" in photos[1]
             assert all("photoreference=" in url for url in photos)
 
+    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_get_place_photos_no_photos(self):
         """Test photo retrieval when no photos exist."""
